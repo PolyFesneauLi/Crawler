@@ -1,3 +1,3 @@
 # Crawler
 Code/DemoSDI
-venv: kaggle 
+venv: pymupdf-venv 
