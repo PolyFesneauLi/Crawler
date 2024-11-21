@@ -1,3 +1,3 @@
 # Crawler
 Code/DemoSDI
-venv: pymupdf-venv 
+venv: Code/pymupdf-venv 
