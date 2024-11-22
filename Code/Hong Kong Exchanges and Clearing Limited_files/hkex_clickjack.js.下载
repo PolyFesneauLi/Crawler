@@ -1,0 +1,47 @@
+﻿/*** For Clickjacking***/
+var hostframesWhiteList = "sdinotice.hkex.com.hk,www.hkgem.com";
+
+$(document).ready(function () {
+    antiClickJack();
+});
+
+//anti clickjack function goes here
+function antiClickJack() {
+    var isFramed = self != top;
+    var currentDomain = window.location.host;
+    //check if the application sites navigate within themselves
+    //then antiClickJack should have no effect
+    var navigateWithinDomain = document.referrer.toString().indexOf(currentDomain) != -1;
+    if (navigateWithinDomain == true) {
+        $("#antiClickjack").remove();
+        return;
+    }
+
+    if (isFramed) {
+        var url = document.referrer;
+        var acceptedHostFrame = isHostFrameAllowed(url);
+        if (acceptedHostFrame) {
+            $("#antiClickjack").remove();
+            //alert("accepted host");
+        } else {
+            alert("Invalid Domain");
+        }
+    } else {
+        //display the body
+        $("#antiClickjack").remove();
+        //alert("not FRAMED");
+    }
+}
+
+function isHostFrameAllowed(targetHostFrame) {
+    if (hostframesWhiteList.length == 0) {
+        return true;
+    }
+    var hosts = hostframesWhiteList.split(",");
+    for (var i = 0; i < hosts.length; i++) {
+        if (targetHostFrame.indexOf(hosts[i]) > -1) {
+            return true;
+        }
+    }
+    return false;
+}

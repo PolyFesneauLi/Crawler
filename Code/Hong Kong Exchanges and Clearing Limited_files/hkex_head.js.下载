@@ -1,0 +1,368 @@
+﻿function includeJsToHeader(jsFilePath) {
+    var js = document.createElement("script");
+
+    if (checkUseOneTrust()) {
+        js.type = "text/plain";
+        js.className = "optanon-category-C0002";
+    } else {
+    	    js.type = "text/javascript";
+    }
+    js.src = jsFilePath;
+    js.async = true;
+    document.getElementsByTagName("head")[0].appendChild(js);
+}
+
+includeJsToHeader("https://assets.adobedtm.com/fbccf582fbe1/8fbefc7f35d2/launch-5e83ee102cdb.min.js");
+
+
+(function (_c) {
+    // Short Hand to util functions
+    var isEmptyValue = _c.isEmptyValue;
+    var getValue = _c.getValue;
+    var getBooleanValue = _c.getBooleanValue;
+    var writeElement = _c.writeElement;
+    var createElement = _c.createElement;
+    var _e = _c.escapeHTML;
+    var tL = _c.transformLink;
+    var head_data_src = _c.getResourcePath("noncms_head.json");
+    var responseText = _c.loadXMLDoc(head_data_src, true);
+    var data = {};
+    if (isEmptyValue(responseText)) {
+        data = {};
+    } else {
+        data = JSON.parse(responseText);
+    }
+    var megaLcpHtmlPath = '/ncms/eds/lcp/megaLCP.html';
+    $("html").attr("lang", "en");
+
+    var logoUrl = wwwhkexnews_index_url;
+
+    document.write('<div id="hkex_news_header" class="noindex">');
+    document.write('<header class="topbar">');
+    document.write('<div class="topbar__mobile-menu">');
+    document.write('<span class="topbar__icon-bar"></span><span class="topbar__icon-bar"></span><span class="topbar__icon-bar"></span>');
+    document.write('</div>');
+    document.write('<div class="container topbar__container">');
+    var a = document.createElement("a");
+    a.href = tL(logoUrl);
+    a.title = getValue(data, "logo.alt");
+    a.className = "topbar__logo";
+    var img = document.createElement("img");
+    img.src = getValue(data, "logo.img");
+    img.alt = getValue(data, "logo.alt", "news_logo");
+    a.appendChild(img);
+    document.write(a.outerHTML);
+    document.write('<div class="lg-topbar__side topbar__side">');
+    document.write('<ul class="topbar__nav">');
+    var navs = getValue(data, "nav", []);
+    if (!isEmptyValue(navs)) {
+        for (var i = 0; i < navs.length; i++) {
+            var nav = navs[i];
+            var linkClasses = ['topbar__about-link', 'link-icon'];
+            var external = getBooleanValue(_c.get(nav, "external", 0));
+            var target = getValue(nav, "target");
+            var title = getValue(nav, "title");
+            if (external) {
+                linkClasses.push('related-site-link-icon');
+            }
+            (function () {
+                var li = document.createElement("li");
+                li.className = "topbar__about";
+                var a = document.createElement("a");
+                a.className = linkClasses.join(' ');
+                a.href = tL(_c.get(nav, "url", "#"));
+                if (!isEmptyValue(target)) {
+                    a.target = target;
+                }
+                a.title = title;
+                var img = document.createElement("img");
+                img.className = 'img-tag';
+                img.alt = getValue(nav, "iconAlt");
+                img.src = getValue(nav, "icon");
+                var span = document.createElement("span");
+                span.className = "link-text";
+                span.textContent = title;
+                a.appendChild(img);
+                a.appendChild(span);
+                li.appendChild(a);
+                document.write(li.outerHTML);
+            })();
+        }
+    }
+    document.write('<li class="topbar__font-sizes font-size-options">');
+    document.write('<span>' + _e(getValue(data, "aaa.title")) + '</span>');
+    var writeFontLink = function (clazz, title, symbol) {
+        var a = document.createElement("a");
+        a.className = ['font-sizes__link', clazz].join(" ");
+        a.href = "#";
+        a.title = title;
+        a.insertAdjacentHTML("beforeend", _c.escapeHTMLEntities(symbol));
+        document.write(a.outerHTML);
+    };
+    var symbol = getValue(data, "aaa.sym");
+    writeFontLink("font-sizes--small", getValue(data, "aaa.s"), symbol);
+    writeFontLink("font-sizes--medium font-sizes--active", getValue(data, "aaa.m"), symbol);
+    writeFontLink("font-sizes--large", getValue(data, "aaa.l"), symbol);
+    document.write('</li>');
+    document.write('</ul>');
+    document.write('<div class="topbar__ic-group">');
+    // Show CHT CHS
+    var writeLanguage = function (from, lang, title, text, clazz) {
+        var a = document.createElement("a");
+        a.className = clazz;
+        a.title = title;
+        a.href = "javascript:route('" + from + "', '" + lang + "')";
+        a.insertAdjacentHTML("beforeend", _c.escapeHTMLEntities(text));
+        document.write(a.outerHTML);
+    };
+    writeLanguage('eng', "chi", getValue(data, "language.tc.title"), getValue(data, "language.tc.text"), "topbar__language-one");
+    writeLanguage('eng', "sim", getValue(data, "language.sc.title"), getValue(data, "language.sc.text"), "openLightBoxByJS topbar__language-two");
+    // Ticker Bell
+    (function () {
+        var noti = getValue(data, "notification");
+        var a = document.createElement("a");
+        a.className = 'topbar__ticker';
+        a.href = "javascript:void(0);";
+        a.title = noti;
+        document.write(a.outerHTML);
+    })();
+    document.write('</div>'); // END of topbar__ic-group
+    document.write('</div>'); // END of topbar__side
+    var skiptocontent = getValue(data, "skiptocontent");
+    var skip = document.createElement("a");
+    skip.href = "#skip-to-content";
+    skip.className = "skip-to-content";
+    skip.title = skiptocontent;
+    skip.insertAdjacentHTML("beforeend", _c.escapeHTMLEntities(skiptocontent));
+    document.write(skip.outerHTML);
+    document.write('</div>'); // END of topbar__container
+    document.write('</header>'); // END of topbar
+    document.write('</div>'); // END of hkex_news_header
+
+    // Mega Menu
+    var menu_data_src = _c.getResourcePath("noncms_menu.json");
+    var responseText = _c.loadXMLDoc(menu_data_src, true);
+    var menuData = {};
+    if (isEmptyValue(responseText)) {
+        menuData = {};
+    } else {
+        menuData = JSON.parse(responseText);
+    }
+    var delayVal = _c.get(menuData, "delay", 300);
+    var delay = 300;
+    if (typeof delayVal === 'string' && delayVal) {
+        delayVal = parseInt(delayVal, 10);
+        if (delayVal > 0) {
+            delay = delayVal;
+        }
+    }
+    delayVal = _c.get(menuData, "closedelay", 0);
+    var closedelay = 0;
+    if (typeof delayVal === 'string' && delayVal) {
+        delayVal = parseInt(delayVal, 10);
+        if (delayVal > 0) {
+            closedelay = delayVal;
+        }
+    }
+    document.write('<div id="hkex_news_megamenu" class="noindex" data-delay="' + delay + '" data-close-delay="' + closedelay + '">');
+    document.write('<nav class="main-menu">');
+    document.write('<div class="container main-menu__wrapper">');
+    document.write('<div class="sticky-menu__logo-wrap sticky-menu__non-fixed">');
+    document.write('<div class="sticky-menu__logo">');
+    (function () {
+        var a = document.createElement("a");
+        a.href = tL(logoUrl);
+        a.title = getValue(menuData, "logo.title");
+        a.className = "sticky-menu__logo";
+        var img = document.createElement("img");
+        img.src = getValue(menuData, "logo.img");
+        img.alt = getValue(menuData, "logo.alt", "news_logo");
+        a.appendChild(img);
+        writeElement(a);
+    })();
+    document.write('</div>'); // END of sticky-menu__logo
+    document.write('</div>'); // END of sticky-menu__logo-wrap
+    var megaItems = _c.get(menuData, "items", []);
+    if (megaItems && megaItems.length > 0) {
+        megaItems = megaItems.sort(function (a, b) {
+            var alci = getBooleanValue(_c.get(a, "lci", 0));
+            var blci = getBooleanValue(_c.get(b, "lci", 0));
+            if (alci) {
+                return -1;
+            } else if (blci) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+    }
+    var createMegaMenuItem = function (item, level) {
+        var lci = getBooleanValue(_c.get(item, "lci", 0));
+        var title = getValue(item, "title");
+        var text = getValue(item, "text");
+        var children = _c.get(item, "children", []);
+        var li = createElement("li");
+        var classes = [];
+        if (level == 1) {
+            var menu = createElement("div");
+            classes.push('main-menu__item');
+            lci == true && classes.push('lci');
+
+            var mainLink = createElement("a");
+            mainLink.href = "#";
+            mainLink.className = "main-menu__link";
+            mainLink.title = title;
+            mainLink.innerHTML = text;
+
+            li.appendChild(mainLink);
+        } else {
+            classes.push('mega-nav__level' + level + '-item');
+            var haslink = getBooleanValue(_c.get(item, "haslink", 0));
+            var external = getBooleanValue(_c.get(item, "external", 0));
+            var url = getValue(item, "url");
+            var target = getValue(item, "target");
+            var filetype = getValue(item, "filetype");
+            var linkClasses = [];
+            linkClasses.push('mega-nav__level' + level + '-link');
+            var a;
+            if (haslink) {
+                a = createElement("a");
+            } else {
+                a = createElement("span");
+                filetype = '';
+                external = false;
+            }
+            if (!isEmptyValue(target)) {
+                a.target = target;
+            }
+            a.href = tL(url);
+            a.title = title;
+            a.insertAdjacentHTML("beforeend", _c.escapeHTMLEntities(title));
+            if (external) {
+                linkClasses.push('related-site-link-icon');
+            } else if (!isEmptyValue(filetype)) {
+                var ftspan = createElement('span');
+                ftspan.className = filetype;
+                a.appendChild(ftspan);
+            }
+            a.className = linkClasses.join(' ');
+            li.appendChild(a);
+        }
+
+        if (lci) {
+            var lciPanel = createElement("div");
+            lciPanel.className = 'mega-menu mega-menu-lci';
+            lciPanel.setAttribute('data-lcp-html', megaLcpHtmlPath);
+            li.appendChild(lciPanel);
+        } else if (level < 3 && children && children.length > 0) {
+            var menuWrapper = createElement('div');
+            var menuClasses = ['mega-menu__wrapper'];
+            if (level > 1) {
+                menuClasses.push('mega-menu-submenu');
+            }
+            menuWrapper.className = menuClasses.join(' ');
+            menuWrapper.appendChild(createMegaMenu(children, level + 1));
+            if (level == 1) {
+                var megaPanel = createElement("div");
+                megaPanel.className = 'mega-menu';
+                megaPanel.appendChild(menuWrapper);
+                li.appendChild(megaPanel);
+            } else {
+                li.appendChild(menuWrapper);
+            }
+        }
+
+        li.className = classes.join(' ');
+        return li;
+    };
+    var createMegaMenu = function (items, level) {
+        var ul = createElement("ul");
+        var classes = ['level' + level];
+
+        if (level == 1) {
+            classes.push('main-menu__list');
+        } else {
+            classes.push('mega-nav__level' + level + '-list');
+        }
+
+        if (items) {
+            for (var i = 0; i < items.length; i++) {
+                ul.appendChild(createMegaMenuItem(items[i], level));
+            }
+        }
+
+        ul.className = classes.join(' ');
+        return ul;
+    };
+    var megaList = createMegaMenu(megaItems, 1);
+    writeElement(megaList);
+    document.write('<div class="m-topbar">');
+    document.write('<ul class="m-topbar__nav">');
+    var navs = getValue(data, "nav", []);
+    if (!isEmptyValue(navs)) {
+        for (var i = 0; i < navs.length; i++) {
+            var nav = navs[i];
+            var linkClasses = ['m-topbar__about-link', 'link-icon'];
+            var external = getBooleanValue(_c.get(nav, "external", 0));
+            var target = getValue(nav, "target");
+            var title = getValue(nav, "title");
+            if (external) {
+                linkClasses.push('related-site-link-icon');
+            }
+            (function () {
+                var li = document.createElement("li");
+                li.className = "m-topbar__about";
+                var a = document.createElement("a");
+                a.className = linkClasses.join(' ');
+                a.href = tL(_c.get(nav, "url", "#"));
+                if (!isEmptyValue(target)) {
+                    a.target = target;
+                }
+                a.title = title;
+                var img = document.createElement("img");
+                img.className = 'img-tag';
+                img.alt = getValue(nav, "iconAlt");
+                img.src = getValue(nav, "icon");
+                var span = document.createElement("span");
+                span.className = "link-text";
+                span.textContent = title;
+                a.appendChild(img);
+                a.appendChild(span);
+                li.appendChild(a);
+                writeElement(li);
+            })();
+        }
+    }
+    document.write('</ul>'); // END of m-topbar__nav
+    document.write('<div class="m-topbar__side">');
+    document.write('<div class="m-topbar__language">');
+    writeLanguage('eng', "chi", getValue(data, "language.tc.title"), getValue(data, "language.tc.text"), "m-topbar__language-one");
+    writeLanguage('eng', "sim", getValue(data, "language.sc.title"), getValue(data, "language.sc.text"), "openLightBoxByJS m-topbar__language-two");
+    document.write('</div>'); // END of m-topbar__language
+    document.write('</div>'); // END of m-topbar__side
+    document.write('<ul class="m-topbar__nav">');
+    document.write('<li class="m-topbar__font-sizes font-size-options">');
+    document.write('<span>' + _e(getValue(data, "aaa.title")) + '</span>');
+    writeFontLink("font-sizes--small", getValue(data, "aaa.s"), symbol);
+    writeFontLink("font-sizes--medium font-sizes--active", getValue(data, "aaa.m"), symbol);
+    writeFontLink("font-sizes--large", getValue(data, "aaa.l"), symbol);
+    document.write('</li>');
+    document.write('<li>'); // TickerBell
+    (function () {
+        var noti = getValue(data, "notification");
+        var a = document.createElement("a");
+        a.className = 'topbar__ticker m-topbar__ticker';
+        a.href = "javascript:void(0);";
+        a.title = noti;
+        var span = createElement("span");
+        span.insertAdjacentHTML("beforeend", _c.escapeHTMLEntities(noti));
+        a.appendChild(span);
+        writeElement(a);
+    })();
+    document.write('</li>');
+    document.write('</ul>'); // END of m-topbar__nav
+    document.write('</div>'); // END of m-topbar
+    document.write('</div>'); // END of main-menu__wrapper
+    document.write('</nav>'); // END of main-menu
+    document.write('</div>'); // END of hkex_news_megamenu
+})(window.hkexCMS);

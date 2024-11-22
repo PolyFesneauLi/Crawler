@@ -1,0 +1,795 @@
+﻿/*** constants for paths ***/
+var wwwhkexnews_url = getDomain(stripKANHAN('' + window.parent.location));
+var wwwhkexnews_prodip = "202.162.184.7";	/*** 20050901 ***/
+var wwwhkexnews_drip = "202.162.185.7";	/*** 20050901 ***/
+var HTTP_HEADER = getHTTPHeader();
+var KANHAN_STRING = getKANHANString();
+var KANHAN_STRING_HKEX = getKANHANStringHKEX();
+var wwwhkexnews_index_url = getHTTPHeader() + '://' + getKANHANString() + "www.hkexnews.hk/index.htm";
+
+
+/*** designated web for EPS ***/
+var wwweps_url = "main.ednews.hk";
+var wwweps_prodip = "202.162.184.7";	/*** 20070303 ***/
+var wwweps_drip = "202.162.185.7";	/*** 20070303 ***/
+
+/*** Script for adding the favicon ***/
+var addFavicon = (function() {
+    var link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+    link.type = 'image/x-icon';
+    link.rel = 'shortcut icon';
+    link.href = '/ncms/images/favicon.ico';
+    document.getElementsByTagName('head')[0].appendChild(link);
+})();
+
+var SetupHanwebPrefilter = (function () {
+    var initialized = false;
+    var htmlFiles = ["homeLCITitleSearch_c.html", "homeLLCI_c.html"]; // HTML files that bypass HanWeb
+    var bypassFolders = ["/ncms/eds/", "/ncms/script/eds/"];
+    var hanweb = KANHAN_STRING.split("/")[0]; // Get hanweb hostname
+    var wwwhost = getDomain(stripKANHAN('' + window.parent.location)); // Get current domain w/o HanWeb
+
+    function IsRootHTML(url) {
+        for (var i = 0; i < htmlFiles.length; i++) {
+            if (url && url.indexOf(htmlFiles[i]) === 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function Contains(url, collection) {
+        if (url && collection) {
+            for (var i = 0; i < collection.length; i++) {
+                if (url.indexOf(collection[i]) !== -1) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function StartsWith(url, collection) {
+        if (url && collection) {
+            for (var i = 0; i < collection.length; i++) {
+                if (url.indexOf(collection[i]) === 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function SetupHanwebPrefilter() {
+        if (hanweb === '') {
+            return;
+        }
+
+        if (!initialized) {
+            if (typeof $.ajaxPrefilter === 'function') {
+                $.ajaxPrefilter("html script json", function (options) {
+                    if (options.dataType === "html" && IsRootHTML(options.url)) { // Check if request is HTML type and require bypass HanWeb
+                        options.url = HTTP_HEADER + "://" + wwwhost + "/" + options.url;
+                        options.crossDomain = true;
+                    } else if (options.url.indexOf(hanweb) !== -1 && options.url.indexOf("/" + wwwhost + "/") === -1 && Contains(options.url, bypassFolders)) { // eg. http://sc.hkexnews.hk/ncms/xxx
+                        options.url = options.url.replace(hanweb, wwwhost);
+                        options.crossDomain = true;
+                    } else if (StartsWith(options.url, bypassFolders)) { // eg. url starts with /ncms/
+                        options.url = HTTP_HEADER + "://" + wwwhost + options.url;
+                        options.crossDomain = true;
+                    }
+                });
+                initialized = true;
+            }
+        }
+    }
+
+    return SetupHanwebPrefilter;
+})();
+
+function includeHTML() {
+    $("[data-include-html]").each(function () {
+        var that = this;
+        $.ajax({
+            url: $(this).attr('data-include-html'),
+            async: false,
+            cache: false,
+            dataType: 'html'
+        }).done(function (html) {
+            $(that).html(html);
+            $(that).removeAttr('data-include-html');
+        });
+    });
+}
+
+function replaceCharacters(conversionString, inChar, outChar) {
+    var convertedString = conversionString.split(inChar);
+    convertedString = convertedString.join(outChar);
+    return convertedString;
+}
+
+function getDomainResource(url) {
+    var lead_slashes = url.indexOf("://");
+    var resource = url.substring(0, lead_slashes);
+    return resource;
+}
+
+function getDomain(url) {
+    var lead_slashes = url.indexOf("://");
+    var domain_start = lead_slashes + 3;
+    var without_resource = url.substring(domain_start, url.length);
+    var next_slash = without_resource.indexOf("/");
+    if (lead_slashes !== -1 && next_slash === -1) {
+        next_slash = without_resource.length;
+    }
+    var domain = without_resource.substring(0, next_slash);
+    if (domain == "search.hkexnews.hk") domain = "www.hkexnews.hk";
+    return domain;
+}
+
+function getHTTPHeader() {
+    dest = '' + window.parent.location;
+    dest = dest.toLowerCase();
+    if (dest.indexOf('/ogva/') != -1) {
+        return 'http';
+    }
+    if (dest.substring(0, 5) == 'https') {
+        return 'https';
+    } else {
+        return 'http';
+    }
+}
+
+function getKANHANString() {
+    dest = '' + window.parent.location;
+    dest = dest.toLowerCase();
+    if (dest.indexOf('/sc.hkexnews.hk/tunis/') != -1) {
+        return 'sc.hkexnews.hk/TuniS/';
+    } else if (dest.indexOf('/sc.hkexnews.hk/gb/') != -1) {
+        return 'sc.hkexnews.hk/gb/';
+    } else {
+        return '';
+    }
+}
+
+function getKANHANStringHKEX() {
+    dest = '' + window.parent.location;
+    dest = dest.toLowerCase();
+    if (dest.indexOf('/sc.hkexnews.hk/tunis/') != -1) {
+        return 'sc.hkexnews.hk/TuniS/';
+    } else if (dest.indexOf('/sc.hkexnews.hk/gb/') != -1) {
+        return 'sc.hkexnews.hk/gb/';
+    } else {
+        return '';
+    }
+}
+
+function stripKANHAN(url_in) {
+    var khstr = getKANHANString();
+    var re = new RegExp(khstr, "i");
+    return url_in.replace(re, "");
+}
+
+function CreateSiteLangCookie(value, days) {
+    if (value === 'chi') {
+        value = 'zh-HK';
+    } else if (value === 'eng') {
+        value = 'en';
+    } else if (value === 'sim') {
+        value = 'zh-CN';
+    }
+
+    if (typeof $.cookie === 'function') {
+        var name = "sclang";
+        var targetDomain = 'hkexnews.hk';
+        var options = { path: '/', expires: days };
+        if (wwwhkexnews_url.indexOf(targetDomain) !== -1) {
+            options.domain = targetDomain;
+        }
+
+        if (ConsentVerification(funConsentCode)) {
+            $.cookie(name, value, options);
+        }
+    }
+}
+
+function route(from, to) {
+    dest = '' + window.parent.location;
+    dest = dest.toLowerCase();
+
+    CreateSiteLangCookie(to, 60);
+
+    if (dest.indexOf("/cmserver/templates/") != -1 || dest.indexOf("/nr/exeres/") != -1) {
+        alert("Please switch to live site for different language version");
+    }
+    else if ((dest.indexOf("/di.hkex.com.hk/")) != -1) {
+        route_sdi(from, to);
+    }
+        /*** 20050901 ***/
+    else if ((dest.indexOf("/202.162.184.1/")) != -1) {
+        route_sdi(from, to);
+    }
+    else if ((dest.indexOf("/202.162.185.1/")) != -1) {
+        route_sdi(from, to);
+    }
+	/***[Start] Update for supporting www1.hkexnews.hk***/
+	/** Comment for eds revamp **/
+	else if((dest.indexOf("predefineddoc.xhtml")) != -1 || (dest.indexOf("titlesearch.xhtml")) != -1
+    		|| (dest.indexOf("titlesearchgem.xhtml")) != -1 || (dest.indexOf("/listedco/listconews/")) != -1 || dest.indexOf("/app/") != -1) {
+    	route_lci_app_search(from, to);
+    }
+	/***[End] Update for supporting www1.hkexnews.hk***/
+    else {
+        route_hkexnews(from, to);
+    }
+}
+
+/***[Start] Update for supporting www1.hkexnews.hk***/
+function route_lci_app_search(from, to) {
+	
+	sessionStorage.setItem("HKEXNEWS_LCI_APP_LANGUAGE_CHANGE", 1);	
+	
+	dest = '' + window.parent.location;
+    dest = dest.toLowerCase();
+    
+	
+	dest = replaceCharacters(dest, '#', '');
+	dest = replaceCharacters(dest, /&lang=[^&]+/i, "");
+    dest = replaceCharacters(dest, /\?lang=[^&]+/i, "");
+    dest = dest.substring(0, dest.indexOf('?'));
+        
+	
+	if(/lang=/ig.test(dest)){			
+		dest = dest.replace(/html.*/ig, "html");
+	}
+		
+	if (from == 'eng') {
+		if (to == 'chi') {
+			dest = dest + "?lang=zh";
+		}
+		if (to == 'sim') {
+			dest = dest + "?lang=zh";
+		}
+	}
+
+	if (from == 'chi') {
+		if (to == 'eng') {
+			dest = dest + "?lang=en";
+		}
+		if (to == 'sim') {
+			dest = dest + "?lang=zh";
+		}
+	}
+
+	if (from == 'sim') {
+		if (to == 'eng') {
+			dest = dest + "?lang=en";
+		}
+		if (to == 'chi') {
+			dest = dest + "?lang=zh";
+		}
+	}
+	window.parent.location.assign(dest); //code scan
+	
+}
+/***[End] Update for supporting www1.hkexnews.hk***/
+
+function route_hkexnews(from, to) {
+    dest = '' + window.parent.location;
+    dest = dest.toLowerCase();
+    dest = replaceCharacters(dest, '/sc.hkexnews.hk/gb/', '/'); //remove X-server from sim-chi
+    dest = replaceCharacters(dest, '/sc.hkexnews.hk/tunis/', '/'); //remove X-server from sim-chi
+    dest = replaceCharacters(dest, '#top', ''); //remove #top sign from URL
+    if ((dest == HTTP_HEADER + '://' + wwwhkexnews_url) || (dest == HTTP_HEADER + '://' + wwwhkexnews_url + '/')) {
+        if (from == 'eng') {
+            dest = HTTP_HEADER + '://' + wwwhkexnews_url + '/index.htm'
+        } else {
+            dest = HTTP_HEADER + '://' + wwwhkexnews_url + '/index_c.htm'
+        }
+    }
+    /*** 20050901 ***/
+    if ((dest == HTTP_HEADER + '://' + wwwhkexnews_prodip) || (dest == HTTP_HEADER + '://' + wwwhkexnews_prodip + '/')) {
+        if (from == 'eng') {
+            dest = HTTP_HEADER + '://' + wwwhkexnews_url + '/index.htm'
+        } else {
+            dest = HTTP_HEADER + '://' + wwwhkexnews_url + '/index_c.htm'
+        }
+    }
+    if ((dest == HTTP_HEADER + '://' + wwwhkexnews_drip) || (dest == HTTP_HEADER + '://' + wwwhkexnews_drip + '/')) {
+        if (from == 'eng') {
+            dest = HTTP_HEADER + '://' + wwwhkexnews_url + '/index.htm'
+        } else {
+            dest = HTTP_HEADER + '://' + wwwhkexnews_url + '/index_c.htm'
+        }
+    }
+    if ((dest.indexOf(HTTP_HEADER + '://' + wwwhkexnews_url + "/reports/dirsearch") == 0) || (dest.indexOf(HTTP_HEADER + '://' + wwwhkexnews_url + "/reports/dirsearch/") == 0)) {
+        if (dest.indexOf("sc_lang=") == -1) {
+            if (from == 'eng') {
+                dest = dest + (dest.indexOf("?") != -1 ? "&" : "?") + "sc_lang=en";
+            } else {
+                dest = dest + (dest.indexOf("?") != -1 ? "&" : "?") + "sc_lang=zh-HK";
+            }
+        }
+    }
+    if (from == 'eng') {
+        if (to == 'chi') {
+            dest = replaceCharacters(dest, '/eng/', '/chi/');
+            dest = replaceCharacters(dest, '.htm', '_c.htm');
+            dest = replaceCharacters(dest, '.asp', '_c.asp');
+            dest = replaceCharacters(dest, /&sc_lang=[^&]+/i, "&sc_lang=zh-HK");
+            dest = replaceCharacters(dest, /\?sc_lang=[^&]+/i, "?sc_lang=zh-HK");
+        }
+        if (to == 'sim') {
+            //??check with HKEx
+            dest = replaceCharacters(dest, '202.162.184.7', 'www.hkexnews.hk');
+            dest = replaceCharacters(dest, '202.162.185.7', 'www.hkexnews.hk');
+            dest = replaceCharacters(dest, '/eng/', '/chi/');
+            dest = replaceCharacters(dest, '.htm', '_c.htm');
+            dest = replaceCharacters(dest, '.asp', '_c.asp');
+            dest = replaceCharacters(dest, /&sc_lang=[^&]+/i, "&sc_lang=zh-HK");
+            dest = replaceCharacters(dest, /\?sc_lang=[^&]+/i, "?sc_lang=zh-HK");
+            dest = replaceCharacters(dest, '://', '://sc.hkexnews.hk/TuniS/');
+            openDisclaimerTo(dest, "zh-cn");
+            return;
+        }
+    }
+
+    if (from == 'chi') {
+        if (to == 'eng') {
+            dest = replaceCharacters(dest, '/chi/', '/eng/');
+            dest = replaceCharacters(dest, '_c.htm', '.htm');
+            dest = replaceCharacters(dest, '_c.asp', '.asp');
+            dest = replaceCharacters(dest, /&sc_lang=[^&]+/i, "&sc_lang=en");
+            dest = replaceCharacters(dest, /\?sc_lang=[^&]+/i, "?sc_lang=en");
+        }
+        if (to == 'sim') {
+            //??check with HKEx
+            dest = replaceCharacters(dest, '202.162.184.7', 'www.hkexnews.hk');
+            dest = replaceCharacters(dest, '202.162.185.7', 'www.hkexnews.hk');
+            dest = replaceCharacters(dest, '://', '://sc.hkexnews.hk/TuniS/');
+            openDisclaimerTo(dest, "zh-cn");
+            return;
+        }
+    }
+
+    if (from == 'sim') {
+        if (to == 'eng') {
+            dest = replaceCharacters(dest, '/chi/', '/eng/');
+            dest = replaceCharacters(dest, '_c.htm', '.htm');
+            dest = replaceCharacters(dest, '_c.asp', '.asp');
+            dest = replaceCharacters(dest, /&sc_lang=[^&]+/i, "&sc_lang=en");
+            dest = replaceCharacters(dest, /\?sc_lang=[^&]+/i, "?sc_lang=en");
+        }
+        if (to == 'chi') {
+            dest = dest
+        }
+    }
+    window.parent.location.assign(dest); //code scan
+}
+
+
+function route_sdi(from, to) {
+    // dest_head = 'http://di.hkex.com.hk/di/NSHome.aspx?src=MAIN&in=1';
+    var dest = '' + window.parent.location;
+    var lower_dest = dest.toLowerCase();
+    if (lower_dest.indexOf("/di.hkex.com.hk/filing/di/") !== -1) {
+        dest = HTTP_HEADER + "://di.hkex.com.hk/filing/di/NSHome.aspx?src=MAIN&in=1";
+        lower_dest = dest.toLowerCase();
+    } else if (lower_dest.indexOf("/di.hkex.com.hk/di/") !== -1) {
+        dest = HTTP_HEADER + "://di.hkex.com.hk/di/NSHome.aspx?src=MAIN&in=1";
+        lower_dest = dest.toLowerCase();
+    }
+    if (lower_dest.indexOf("&lang=") == -1 && lower_dest.indexOf("?lang=") == -1) {
+        if (from == 'eng') {
+            dest = dest + (dest.indexOf("?") != -1 ? "&" : "?") + "lang=EN&g_lang=en";
+        } else if (from == 'chi') {
+            dest = dest + (dest.indexOf("?") != -1 ? "&" : "?") + "lang=ZH&g_lang=zh-HK";
+        } else {
+            dest = dest + (dest.indexOf("?") != -1 ? "&" : "?") + "lang=ZH&g_lang=zh-CN";
+	}
+    }
+
+    if (from == 'eng') {
+        // dest = dest_head + '&lang=EN';
+        if (to == 'chi') {
+            dest = replaceCharacters(dest, /\.htm/i, '_c.htm');
+            dest = replaceCharacters(dest, /&lang=[^&]+/i, '&lang=ZH');
+            dest = replaceCharacters(dest, /\?lang=[^&]+/i, '?lang=ZH');
+            dest = replaceCharacters(dest, /&g_lang=[^&]+/i, '&g_lang=zh-HK');
+            dest = replaceCharacters(dest, /\?g_lang=[^&]+/i, '?g_lang=zh-HK');
+        }
+        if (to == 'sim') {
+            //??check with HKEx
+            dest = replaceCharacters(dest, '202.162.184.1', 'sdinotice.hkex.com.hk');	/*** 20050901 ***/
+            dest = replaceCharacters(dest, '202.162.185.1', 'sdinotice.hkex.com.hk');	/*** 20050901 ***/
+            dest = replaceCharacters(dest, /\.htm/i, '_c.htm');
+            dest = replaceCharacters(dest, /&lang=[^&]+/i, '&lang=ZH');
+            dest = replaceCharacters(dest, /\?lang=[^&]+/i, '?lang=ZH');
+            dest = replaceCharacters(dest, /&g_lang=[^&]+/i, '&g_lang=zh-CN');
+            dest = replaceCharacters(dest, /\?g_lang=[^&]+/i, '?g_lang=zh-CN');
+            dest = replaceCharacters(dest, '://', '://sc.hkexnews.hk/TuniS/');
+            openDisclaimerTo(dest, "zh-cn");
+            return;
+        }
+    }
+
+    if (from == 'chi') {
+        // dest = dest_head + '&lang=ZH';
+        if (to == 'eng') {
+            dest = replaceCharacters(dest, /_c\.htm/i, '.htm');
+            dest = replaceCharacters(dest, /&lang=[^&]+/i, '&lang=EN');
+            dest = replaceCharacters(dest, /\?lang=[^&]+/i, '?lang=EN');
+            dest = replaceCharacters(dest, /&g_lang=[^&]+/i, '&g_lang=en');
+            dest = replaceCharacters(dest, /\?g_lang=[^&]+/i, '?g_lang=en');
+        }
+        if (to == 'sim') {
+            //??check with HKEx
+            dest = replaceCharacters(dest, '202.162.184.1', 'sdinotice.hkex.com.hk');	/*** 20050901 ***/
+            dest = replaceCharacters(dest, '202.162.185.1', 'sdinotice.hkex.com.hk');	/*** 20050901 ***/
+            dest = replaceCharacters(dest, '://', '://sc.hkexnews.hk/TuniS/');
+            dest = replaceCharacters(dest, /&g_lang=[^&]+/i, '&g_lang=zh-CN');
+            dest = replaceCharacters(dest, /\?g_lang=[^&]+/i, '?g_lang=zh-CN');
+            openDisclaimerTo(dest, "zh-cn");
+            return;
+        }
+    }
+
+    if (from == 'sim') {
+        // dest = dest_head + '&lang=ZH';
+        if (to == 'eng') {
+            dest = replaceCharacters(dest, /_c\.htm/i, '.htm');
+            dest = replaceCharacters(dest, /&lang=[^&]+/i, '&lang=EN');
+            dest = replaceCharacters(dest, /\?lang=[^&]+/i, '?lang=EN');
+            dest = replaceCharacters(dest, /&g_lang=[^&]+/i, '&g_lang=en');
+            dest = replaceCharacters(dest, /\?g_lang=[^&]+/i, '?g_lang=en');
+            dest = replaceCharacters(dest, /\/sc\.hkexnews\.hk\/gb\//i, '/'); //remove X-server from sim-chi
+            dest = replaceCharacters(dest, /\/sc\.hkexnews\.hk\/tunis\//i, '/'); //remove X-server from sim-chi
+        }
+        if (to == 'chi') {
+            dest = replaceCharacters(dest, /\/sc\.hkexnews\.hk\/gb\//i, '/'); //remove X-server from sim-chi
+            dest = replaceCharacters(dest, /\/sc\.hkexnews\.hk\/tunis\//i, '/'); //remove X-server from sim-chi
+            dest = replaceCharacters(dest, /&g_lang=[^&]+/i, '&g_lang=zh-HK');
+            dest = replaceCharacters(dest, /\?g_lang=[^&]+/i, '?g_lang=zh-HK');
+        }
+    }
+    window.parent.location.assign(dest); //code scan
+}
+
+function lastfilename() {
+
+    pos = dest.lastIndexOf('/');
+    var result = dest.substring(pos, dest.length);
+    return result;
+
+}
+
+function trimAll(sString) {
+    while (sString.substring(0, 1) == ' ') {
+        sString = sString.substring(1, sString.length);
+    }
+    while (sString.substring(sString.length - 1, sString.length) == ' ') {
+        sString = sString.substring(0, sString.length - 1);
+    }
+
+    return sString;
+}
+
+function switchTo(link) {
+    document.location.href = link;
+}
+
+function openDisclaimerTo(dest, lang) {
+    var url = "/ncms/images/disclaimer.gif";
+    var w = 431;
+    var h = 508;
+    $.fancybox.open({
+        'fitToView': true,
+        'minWidth': w,
+        'maxWidth': w,
+        'minHeight': h,
+        'maxHeight': h,
+        'transitionIn': 'elastic',
+        'transitionOut': 'elastic',
+        'speedIn': 500,
+        'speedOut': 300,
+        'autoDimensions': true,
+        'centerOnScroll': true,
+        'autoCenter': true,
+        'href': url,
+        'type': 'image',
+        'scrolling': 'no',
+        helpers: {
+            overlay: {
+                locked: true
+            }
+        },
+        'afterClose': function () {
+            window.parent.location.assign(dest); //code scan
+        }
+    });
+}
+
+(function (module) {
+    var BASE_PATH = "/ncms/script/";
+    var escape = document.createElement('textarea');
+    var htmlEntityRegex = new RegExp('&amp;#(x[\\da-f]+|\\d+);', 'ig');
+
+    // Please define your mapping here
+    var patterns = [
+        ["_c", "_sc", ".jpg"],
+		["_c", "_sc", ".jpeg"],
+        ["_c", "_sc", ".png"],
+		["_c", "_sc", ".tif"],
+		["_c", "_sc", ".tiff"],
+		["_c", "_sc", ".gif"],
+		["_c", "_sc", ".mp4"],
+		["_c", "_sc", ".mov"],
+		["_c", "_sc", ".swf"],
+		["_tc", "_sc", ".pdf"],
+		["_tc", "_sc", ".doc"],
+		["_tc", "_sc", ".docx"],
+		["_tc", "_sc", ".xls"],
+		["_tc", "_sc", ".xlsx"]
+    ];
+
+    var endingWith = function (str, suffix) {
+        return str.indexOf(suffix, str.length - suffix.length) !== -1;
+    };
+
+    var removeSuffix = function (str, len) {
+        return str.substr(0, str.length - len);
+    };
+
+    module.convertScLink = function (url) {
+        if ((KANHAN_STRING != '') && url && url.length) {
+			var url_path = url;
+			if (url_path.lastIndexOf("?") !== -1) {
+				var idx = url_path.lastIndexOf("?");
+				url_path = url_path.substr(0, idx);
+			}
+			if (url_path.lastIndexOf("#") !== -1) {
+				var idx = url_path.lastIndexOf("#");
+				url_path = url_path.substr(0, idx);
+			}
+			var part_suffux = url.substr(url_path.length);
+            var lurl = url_path.toLowerCase();
+			
+            for (var i = 0; i < patterns.length; i++) {
+                var suffix = patterns[i][0];
+                var sc = patterns[i][1];
+                var ext = patterns[i][2];
+                if (endingWith(lurl, ext)) {
+                    var part_prefix = removeSuffix(url_path, ext.length);
+                    if (endingWith(part_prefix, suffix)) {
+                        part_prefix = removeSuffix(part_prefix, suffix.length);
+                        return part_prefix + sc + ext + part_suffux;
+                    }
+                }
+            }
+        }
+        return url;
+    };
+
+    module.escapeHTML = function (html) {
+        escape.textContent = html;
+        return escape.innerHTML;
+    };
+
+    module.escapeHTMLEntities = function (html) {
+        if (html) {
+            html = module.escapeHTML(html);
+            if (html.indexOf("&amp;#") !== -1) {
+                html = html.replace(htmlEntityRegex, "&#$1;");
+            }
+        }
+        return html;
+    };
+
+    module.loadXMLDoc = function (path, cache, charset) {
+        var xmlhttp;
+        var url = path;
+        if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
+            xmlhttp = new XMLHttpRequest();
+        } else { // code for IE6, IE5
+            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        if (!cache) {
+            url += (url.indexOf('?') != -1 ? '&_=' : '?_=') + (new Date()).getTime();
+        }
+        xmlhttp.open("GET", url, false);
+        if (xmlhttp.overrideMimeType) {
+            if (charset) {
+                if (charset.toLowerCase() == "big5") {
+                    xmlhttp.overrideMimeType("application/json; charset=big5");
+                } else if (charset.toLowerCase() == "gbk") {
+                    xmlhttp.overrideMimeType("application/json; charset=gbk");
+                } else {
+                    xmlhttp.overrideMimeType("application/json; charset=utf-8");
+                }
+            } else {
+                xmlhttp.overrideMimeType("application/json; charset=utf-8");
+            }
+        }
+        xmlhttp.send();
+        if (xmlhttp.status == 200 && xmlhttp.responseText != null && xmlhttp.responseText != "") {
+            var response = xmlhttp.responseText;
+            return response;
+        } else {
+            return undefined;
+        }
+    };
+
+    module.get = function (o, path, defaultVal) {
+        var paths = path.split('.');
+        var ref = o;
+
+        for (var i = 0; i < paths.length && ref; i++) {
+            ref = ref[paths[i]];
+        }
+        var ret = (i && i == paths.length) ? ref : undefined;
+        return (!ret && typeof defaultVal != 'undefined') ? defaultVal : ret;
+    };
+
+    module.getResourcePath = function (path) {
+        return [BASE_PATH, path].join("/");
+    };
+
+    module.translateEnv = function (linkUrl) {
+        var link = linkUrl;
+        if (link && HKEXNEWS_ENV && HKEXNEWS_ENV == 'staging') {
+            var clink = link.toLowerCase();
+            if (clink.indexOf("http:") === 0 || clink.indexOf("https:") === 0) {
+                for (var domain in HKEX_DOMAINS) {
+                    if (clink.indexOf("://" + domain) != -1) {
+                        var re = new RegExp("://" + domain, "i");
+                        link = linkUrl.replace(re, "://" + HKEX_DOMAINS[domain]);
+                        link = module.convertScLink(link);
+                        break;
+                    }
+                }
+            }
+        }
+        return link;
+    },
+
+    module.transformLink = function (linkUrl) {
+        var link = linkUrl;
+        if (linkUrl) {
+            if (link.indexOf("/ncms/media/") === 0) {
+                // Do Nothing
+                link = module.convertScLink(link);
+            } else if ((link.indexOf("/app/appindex.html") === 0) 
+				|| (link.indexOf("/listedco/listconews/index/lci.html") === 0)
+				|| (link.indexOf("/search/titlesearch.xhtml") === 0)
+				|| (link.indexOf("/search/predefineddoc.xhtml") === 0)) {
+				// Do Nothing
+			} else if (link.indexOf("/") === 0) {
+                link = HTTP_HEADER + "://" + CMS_DOMAIN + linkUrl;
+                link = module.translateEnv(link);
+                link = module.transformScLink(link);
+            } else if (link.indexOf("http:") === 0 || link.indexOf("https:") === 0) {
+                link = module.translateEnv(link);
+                link = module.transformScLink(link);
+            }
+        }
+
+        return link;
+    };
+
+    module.transformScLink = function (linkUrl) {
+        var hanwebDomains = window.HANWEB_DOMAINS || [];
+        hanwebDomains = "," + hanwebDomains.join(",").toLowerCase() + ",";
+        var hkexHanwebDomains = window.HKEX_HANWEB_DOMAINS || [];
+        hkexHanwebDomains = "," + hkexHanwebDomains.join(",").toLowerCase() + ",";
+        var link = linkUrl;
+        if (typeof link === 'string') {
+            if (KANHAN_STRING != '') {
+                var domain = getDomain(link);
+                var resource = getDomainResource(link);
+                var lowerDomain = "," + domain.toLowerCase() + ",";
+                var resource_domain = "," + (resource + '://' + domain).toLowerCase() + ",";
+                if ((lowerDomain && hanwebDomains.indexOf(lowerDomain) !== -1) || (resource_domain && hanwebDomains.indexOf(resource_domain) !== -1)) {
+                    link = replaceCharacters(link, /&sc_lang=[^&]+/i, "&sc_lang=zh-CN");
+                    link = replaceCharacters(link, /\?sc_lang=[^&]+/i, "?sc_lang=zh-CN");
+                    link = replaceCharacters(link, '://', '://sc.hkexnews.hk/TuniS/');
+                    link = module.convertScLink(link);
+                }
+                if ((lowerDomain && hkexHanwebDomains.indexOf(lowerDomain) !== -1) || (resource_domain && hkexHanwebDomains.indexOf(resource_domain) !== -1)) {
+                    link = replaceCharacters(link, /&sc_lang=[^&]+/i, "&sc_lang=zh-CN");
+                    link = replaceCharacters(link, /\?sc_lang=[^&]+/i, "?sc_lang=zh-CN");
+                    link = replaceCharacters(link, '://', '://sc.hkex.com.hk/TuniS/');
+                    link = module.convertScLink(link);
+                }
+            }
+        }
+
+        return link;
+    };
+
+    module.createLinkElement = function (linkUrl) {
+        var a = createElement("a");
+        a.href = module.transformLink(linkUrl);
+        return a;
+    };
+    function getMetaContent(name) {
+        var node = document.head.querySelector("meta[property='" + name + "']");
+        if (node) {
+            return node.getAttribute("content");
+        }
+        return undefined;
+    }
+    function isEmptyValue(o) {
+        return o == null || typeof o == 'undefined' || !o;
+    }
+    function getValue(o, path) {
+        var value = module.get(o, path);
+        return !isEmptyValue(value) ? value : "";
+    }
+    function getBooleanValue(val) {
+        return val === true || val === 1;
+    }
+    function writeElement(el) {
+        document.write(el.outerHTML);
+    }
+    function createElement(tag, attr) {
+        var el = document.createElement(tag);
+        if (attr) {
+            for (var name in attr) {
+                var value = attr[name];
+                if (el.hasOwnProperty(name)) {
+                    el[name] = value;
+                } else {
+                    el.setAttribute(name, value);
+                }
+            }
+        }
+        return el;
+    }
+    function getCookie(cname) {
+        var name = cname + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) == 0) {
+                return unescape(c.substring(name.length, c.length));
+            }
+        }
+        return "";
+    }
+    function getScriptSrc(category, src) {
+        // <script type=\"text/plain\" class=\"optanon-category-C0002\" src="/ncms/script/webtrends/webtrends.load.js"></script>
+        if (checkUseOneTrust()) {
+            return "<script type=\"text/plain\" class=\"" + category + "\" src=\"" + src + "\"></script>";
+        } else {
+            return "<script type=\"text/javascript\" src=\"" + src + "\"></script>";
+        }
+    }
+    function getScriptBlock(category, script) {
+        if (checkUseOneTrust()) {
+            return "<script type=\"text/plain\" class=\"" + category + "\">" + script + "</script>";
+        } else {
+            return "<script type=\"text/javascript\">" + script + "</script>";
+        }
+    }
+    module.isEmptyValue = isEmptyValue;
+    module.getValue = getValue;
+    module.getBooleanValue = getBooleanValue;
+    module.writeElement = writeElement;
+    module.createElement = createElement;
+    module.getCookie = getCookie;
+    module.getMetaContent = getMetaContent;
+    module.getScriptSrc = getScriptSrc;
+    module.getScriptBlock = getScriptBlock;
+})(window.hkexCMS = window.hkexCMS || {});
+
+function checkUseOneTrust() {
+    if (window.location.pathname == "/" || window.location.pathname == "/index.htm" || window.location.pathname == "/index_c.htm") {
+        return true;
+    }
+    else {
+        return true;
+    }
+}

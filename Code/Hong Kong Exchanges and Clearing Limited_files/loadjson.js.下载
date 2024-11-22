@@ -1,0 +1,1351 @@
+﻿if (typeof window.LoadMENUJSONData == 'undefined') {
+    window.LoadMENUJSONData = function (url, async) {
+        if (typeof this.LoadLcpdata == 'undefined') {
+            this.LoadLcpdata = {};
+        }
+        if (this.LoadLcpdata[url]) {
+            var state = this.LoadLcpdata[url].state();
+            if (state != 'reject') {
+                return this.LoadLcpdata[url].promise();
+            }
+        }
+        this.LoadLcpdata[url] = $.Deferred();
+        var deferred = this.LoadLcpdata[url];
+        return $.ajax({
+            url: url,
+            dataType: 'json',
+            async: async,
+            mimeType: megaLcpConfig.JsonFileMimeType,
+            cache: false
+        }).done(function (data) {
+            deferred.resolve(data);
+        }).fail(function (xhr, textStatus, errorThrown) {
+            deferred.reject();
+			if(xhr.status != 200 && xhr.status != 0){
+				alert(megaLcpConfig.jsonFailMessage + url+ " [" + textStatus+"] " + "[" +errorThrown+"]" );
+			}
+        });
+        return deferred.promise();
+    }
+}
+
+function HTML_Renderer() {
+    this.renderLock = {};
+    this.renderTimer = {};
+}
+
+HTML_Renderer.prototype = {
+    renderTo: function (key, lockKey, target, data, size, delay) {
+        var that = this;
+        this.renderLock[key] = lockKey;
+        var $d = $.Deferred();
+        var p = 1;
+        var d = [];
+        function append() {
+            var start = (p - 1) * size;
+            var end = p * size;
+            d = data.slice(start, end);
+            for (var i = 0; i < d.length; i++) {
+                if (that.renderLock[key] != lockKey) {
+                    if (that.renderTimer[key]) {
+                        clearTimeout(that.renderTimer[key]);
+                    }
+                    $d.reject();
+                    return;
+                }
+                target.append(d[i]);
+            }
+
+            if (size == d.length) {
+                p++;
+                that.renderTimer[key] = setTimeout(append, delay);
+            } else {
+                $d.resolve();
+            }
+        }
+        append();
+        return $d.promise();
+    }
+};
+
+var HTMLRenderer = new HTML_Renderer();
+var lciEscapeRegexChars = function(s) {
+	return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+};
+(function () {
+    var lang = megaLcpConfig.Language;
+    var textALL = megaLcpConfig.Label_All;
+    function fetchJSONFile(path, callback) {
+        var httpRequest = new XMLHttpRequest();
+        httpRequest.onreadystatechange = function () {
+            if (httpRequest.readyState === 4) {
+                if (httpRequest.status === 200) {
+                    var data = JSON.parse(httpRequest.responseText);
+                    var data1 = JSON.parse(httpRequest.responseText);
+                    var data2 = JSON.parse(httpRequest.responseText);
+                    if (callback) callback(data, data1, data2);
+                }
+            }
+        };
+        httpRequest.open('GET', path);
+        httpRequest.send();
+    }
+    //input delay function
+    $.fn.delayKeyup = function (callback, ms) {
+        var timer = 0;
+        var el = $(this);
+        $(this).on('input propertychange', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                callback(el)
+            }, ms);
+        });
+        return $(this);
+    };
+    //conver roman number
+    function toRoman(num) {
+        var result = '';
+        var decimal = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
+        var roman = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"];
+        for (var i = 0; i <= decimal.length; i++) {
+            // looping over every element of our arrays
+            while (num % decimal[i] < num) {
+                // keep trying the same number until it won't fit anymore      
+                result += roman[i];
+                // add the matching roman number to our result string
+                num -= decimal[i];
+                // remove the decimal value of the roman number from our number
+            }
+        }
+        return result;
+    }
+    //suffix_of
+    function ordinal_suffix_of(i) {
+        var j = i % 10,
+            k = i % 100;
+        if (j == 1 && k != 11) {
+            return i + "st";
+        }
+        if (j == 2 && k != 12) {
+            return i + "nd";
+        }
+        if (j == 3 && k != 13) {
+            return i + "rd";
+        }
+        return i + "th";
+    }
+    //Jquery plugin immediateText
+    jQuery.fn.justtext = function () {
+
+        return $(this).clone()
+                .children()
+                .remove()
+                .end()
+                .text();
+
+    };
+
+
+    // this requests the file and executes a callback with the parsed result once
+    //   it is available
+    var isLoading1 = false;
+    var defaultLoad = false;
+    var lastChecked = '';
+    //company-sort//
+    var sort_company_code = false;
+    var check_validdropdown = false;
+    //array company value//
+    var hidetarget1 = $('#mega-company .mega-lci-level3-top .mega_menu_com-group');
+    var hidetarget2 = $('#mega-company .mega-lci-level3-top .record');
+    var hidetarget3 = $('#mega-company .mega-lci-level3-top .right-area');
+    var moblie_hidetarget1 = $('#mega-company .mega-lci-level3-mobile-top .mega_menu_com-group-moblie');
+    var moblie_hidetarget2 = $('#mega-company .mega-lci-level3-mobile-top .record');
+    var moblie_hidetarget3 = $('#mega-company .mega-lci-level3-mobile-top .show_current_category');
+	var bindSearch = false;
+
+    $(".mega-lci-level2-link").find("[aria-controls='mega-company']").click(function () {
+        //css
+		hideLCIMessageBox();
+        $('#mega-company .mega-lci-level3-top').css("height", "108px");
+        var checkwindowsize = $(window).width();
+        var checkbox = $('.mega_menu_com-group-moblie .combobox-field').attr("clicked");
+        //check hidden class//
+        if (hidetarget1.hasClass('desktop-hidden tablet-hidden') == true) {
+            hidetarget1.removeClass('desktop-hidden tablet-hidden');
+        }
+        if (hidetarget2.hasClass('desktop-hidden tablet-hidden') == true) {
+            hidetarget2.removeClass('desktop-hidden tablet-hidden');
+        }
+        if (hidetarget3.hasClass('desktop-hidden tablet-hidden') == true) {
+            hidetarget3.removeClass('desktop-hidden tablet-hidden');
+        }
+
+        //moblie click
+        if (checkwindowsize < 731 && checkbox != "click") {
+            $('#megaLcaSortName').trigger("click");
+            if (moblie_hidetarget1.hasClass('mobile-hidden') == true) {
+                moblie_hidetarget1.removeClass('mobile-hidden');
+            }
+            if (moblie_hidetarget2.hasClass('mobile-hidden') == true) {
+                moblie_hidetarget2.removeClass('mobile-hidden');
+            }
+            if (moblie_hidetarget3.hasClass('mobile-hidden') == true) {
+                moblie_hidetarget3.removeClass('mobile-hidden');
+            }
+
+        }
+        var checked = $('#megaLcaSortName:checked').length;
+        var check = $('.mega_menu_com-group .combobox-field').attr('check', 'check');
+        var categorycheck = $('.mega_menu_com-group .combobox-field').attr("data-value");
+        //count the time
+        var t0 = performance.now();
+        var checked = $('#megaLcaSortName:checked').length;
+
+
+        var get_json = megaLcpConfig.ActiveStockUrl;
+        if (sort_company_code == false || check != "check") {
+            sort_company_code = true;
+
+            var json = new Array();
+            function LoadCOMData() {
+                var deferred = $.Deferred();
+                $.when(LoadMENUJSONData(megaLcpConfig.ActiveStockUrl, true)
+				).done(function (data) {
+				    deferred.resolve(data);
+				    json = data;
+				    if (check_validdropdown == false) {
+				        check_validdropdown == true;
+				        var numsum = json.length;
+				        var separate_item = Math.ceil(numsum / megaLcpConfig.numofcom);
+				        var current_item = $('.mega_menu_com-group .droplist-item').length;
+
+				        if (separate_item > current_item) {
+				            var target = $('.mega_menu_com-group .droplist-items');
+				            var target_mobile = $('.mega_menu_com-group-moblie .droplist-items');
+				            for (var i = current_item, n = separate_item; i <= n; i += 1) {
+				                var end = i + 1;
+				                var roman_num = toRoman(end);
+				                var suffix_num = ordinal_suffix_of(end);
+				                if (megaLcpConfig.Language == "ZH") {
+				                    var suffix_num = '第' + end.toLocaleString('zh-Hans-CN-u-nu-hanidec') + '';
+				                    if (end == 10) {
+				                        var suffix_num = '第十';
+				                    }
+				                    if (end > 10) {
+				                        var re_end = end - 10;
+
+				                        var suffix_num = '第十' + re_end.toLocaleString('zh-Hans-CN-u-nu-hanidec') + '';
+				                    }
+				                    if (end == 20) {
+				                        var suffix_num = '第二十';
+				                    }
+				                    if (end > 20) {
+				                        var re_end = end - 20;
+				                        var suffix_num = '第二十' + re_end.toLocaleString('zh-Hans-CN-u-nu-hanidec') + '';
+				                    }
+
+				                }
+				                var add_item = '<div class="droplist-item" data-value="' + roman_num + '"><a href="#">' + suffix_num + '</a></div>';
+				                target.append(add_item);
+				                target_mobile.append(add_item);
+
+				            }
+
+				            $('.mega_menu_com-group').WidgetComboBoxField('update');
+				            $('.mega_menu_com-group-moblie').WidgetComboBoxField('update');
+				        }
+				        function checkdrorpitem() {
+				            var current_item = $('.mega_menu_com-group .droplist-item').length;
+				            if (separate_item < current_item) {
+				                for (var i = separate_item, n = current_item; i <= n; i += 1) {
+				                    var roman_num = toRoman(i + 1);
+				                    $('.mega_menu_com-group .droplist-items').find('[data-value="' + roman_num + '"]').css("display", "none");
+				                    $('.mega_menu_com-group-moblie .droplist-items').find('[data-value="' + roman_num + '"]').css("display", "none");
+				                }
+
+				            }
+				        };
+				        checkdrorpitem()
+				        //list_com page_load_desktop
+				        $('.mega_menu_com-group .combobox-field').off('change').on('change', function () {
+
+				            $('.mega_menu_com-group .combobox-field').attr("check", "");
+				            $(".mega-lci-level2-link").find("[aria-controls='mega-company']").trigger("click");
+				            $('.mega_menu_com-group .combobox-field').attr("check", "check");
+				            var target_selected = $(this).attr("data-value");
+				            var moblie_target = $('.mega_menu_com-group-moblie .combobox-field').attr("data-value");
+				            if (target_selected != moblie_target) {
+				                var clear_selected = $('.mega_menu_com-group-moblie .droplist-items').find('[data-select-target="true"]');
+				                clear_selected.attr("data-select-target", "false");
+				                $('.mega_menu_com-group-moblie .droplist-items').find('[data-value=' + target_selected + ']').attr("data-select-target", "true");
+				                $('.mega_menu_com-group-moblie .combobox-field').attr("data-value", target_selected);
+				                $('.mega_menu_com-group-moblie .combobox-field').text($(this).text());
+				            }
+
+
+				        });
+				        $('.mega_menu_com-group').click(function () {
+				            checkdrorpitem();
+				        });
+				        //list_com page_load_moblie
+				        $('.mega_menu_com-group-moblie .combobox-field').off('change').on('change', function () {
+
+				            var target = $(this).attr("data-value");
+				            $(this).attr('clicked', 'click');
+				            $('.mega_menu_com-group .droplist-items').find('[data-value="' + target + '"]').trigger("click");
+				            $(this).attr('clicked', '');
+
+				        });
+				        if (megaLcpConfig.Language == "EN") {
+				            $('#mega-company .left-area .record').text(megaLcpConfig.numofcom + " records");
+				        }
+				        else {
+				            $('#mega-company .left-area .record').text(megaLcpConfig.numofcom + " 紀錄");
+				        }
+						if (!bindSearch) {
+				            bindSearch = true;
+				            keyupmenu_com();
+				            keyupmobliesearch();
+				        }
+				    }
+
+				});
+                return deferred.promise();
+            }
+            //LoadCOMData();
+
+            $.when(LoadCOMData()).done(function () {
+                // if (defaultLoad == false) {
+                defaultLoad = true;
+                // sortJsonField();
+                if (checked > 0) {
+
+                    sortJsonField("name");
+                }
+                else {
+                    sortJsonField("code");
+                }
+                //}
+                $('#megaLcaSortName').click(function () {
+                    if (lastChecked != this.id) {
+                        var selectfirst = $('#mega-company .combobox-field').attr("data-value");
+                        var getfirstvalue = $('#mega-company .droplist-items div:first').attr("data-value");
+                        if (selectfirst != getfirstvalue) {
+                            $('#mega-company .droplist-items').find('[data-value="' + getfirstvalue + '"]').trigger("click");
+                        }
+                        sortJsonField("name");
+                        lastChecked = this.id;
+
+                    }
+                })
+                $('#megaLcaSortCode').click(function () {
+                    if (lastChecked != this.id) {
+                        var selectfirst = $('#mega-company .combobox-field').attr("data-value");
+                        var getfirstvalue = $('#mega-company .droplist-items div:first').attr("data-value");
+                        if (selectfirst != getfirstvalue) {
+                            $('#mega-company .droplist-items').find('[data-value="' + getfirstvalue + '"]').trigger("click");
+                        }
+                        sortJsonField("code");
+                        lastChecked = this.id;
+
+                    }
+                })
+                //moblie click
+
+                if (megaLcpConfig.Language != "EN") {
+                    $('.show_current_category').css("display", "none");
+                }
+
+
+                if (megaLcpConfig.Language == "EN") {
+                    $('.mega_menu_com-group-moblie').parent().find('.record').text(megaLcpConfig.numofcom + " records");
+                }
+                else {
+                    $('.mega_menu_com-group-moblie').parent().find('.record').text(megaLcpConfig.numofcom + " 紀錄");
+                }
+
+            });
+
+
+            function sortJsonField(field) {
+                function sortJson(a, b) {
+                    if (field == "name") {
+                        if (a.s > b.s) return 1;
+                        else if (a.s < b.s) return -1;
+                        else return 0;
+                    } else {
+                        return a.c > b.c ? 1 : -1;;
+                    }
+
+                    if (field == "code") { return a.c > b.c ? 1 : -1; } else
+                        if (field == "name") { return a.n > b.n ? 1 : -1; } else
+                            return a.c > b.c ? 1 : -1;
+                }
+                var start = performance.now();
+                json.sort(sortJson);
+                showJSON();
+            };
+            //shower
+            function showJSON() {
+                $('#mega-company').find('.mega-lci-company-list').html(''); //clear html
+                var megamenu_com = $('#mega-company').find('.mega-lci-company-list');
+                var checked = $('#megaLcaSortName:checked').length;
+                if (checked > 0) {
+                    numsum = json.length;
+                    var check_value = $('.mega_menu_com-group .combobox-field').attr("data-value");
+                    var separate_item = Math.ceil(numsum / megaLcpConfig.numofcom);
+                    var separate_num = Math.round(numsum / megaLcpConfig.numofcom);
+                    for (var r = 0, n = separate_item; r <= n; r += 1) {
+                        var roman_num = toRoman(r);
+
+                        if (check_value == roman_num) {
+                            var data_range = megaLcpConfig.numofcom * r;
+                            var base_range = megaLcpConfig.numofcom;
+
+                        }
+
+                        i = data_range - base_range;
+                        if (check_value == toRoman(separate_num)) {
+                            var data_range = numsum;
+                            i = megaLcpConfig.numofcom * (r - 1);
+                        }
+                    }
+                    //numsum=1200;
+                    if (megaLcpConfig.Language == "ZH") {
+                        for (var i, row, n = data_range; i < n; i += 1) {
+                            var company_post_target = 'company_posttoweb(' + json[i].i + ',\'' + lang + '\');return false;';
+                            row = json[i];
+                            $post = $('<li onclick="' + company_post_target + '"><div class="mega-lci-stockcode">' + json[i].c + '</div><div class="mega-lci-companyname">' + json[i].n + '</div></li>');
+                            megamenu_com.append($post);
+
+                        }
+                    }
+                    else {
+                        if (json.length < 1000) {
+                            data_range = json.length;
+                        }
+                        for (var i, row, n = data_range; i < n; i += 1) {
+                            row = json[i];
+                            var stockurl = megaLcpConfig.TitleSearchActionUrl;    //handle stockcode post url
+
+                            if (row.n.charAt(0).match(/^[0-9]+$/) != null) {
+                                var checkarea = $('#alphabetical-other').length;
+                                if (checkarea == 0) {
+                                    var gen_other = ('<p class="mega-lci-category" id="alphabetical-other">#</p>');
+                                    megamenu_com.append(gen_other);
+                                }
+                                var company_post_target = 'company_posttoweb(' + json[i].i + ',\'' + lang + '\');return false;';
+                                $postother = $('<li onclick="' + company_post_target + '"><div class="mega-lci-stockcode">' + json[i].c + '</div><div class="mega-lci-companyname">' + json[i].n + '</div></li>');
+                                megamenu_com.append($postother);
+
+                            }
+                            for (var j = 65; j <= 90; j++) {
+                                if (row.n.charAt(0).toUpperCase() == String.fromCharCode(j)) {
+                                    var checkarea = $('#alphabetical-' + String.fromCharCode(j) + '').length;
+                                    if (checkarea == 0) {
+                                        var gen_atoz = ('<p class="mega-lci-category" id="alphabetical-' + String.fromCharCode(j) + '">' + String.fromCharCode(j) + '</p>');
+                                        megamenu_com.append(gen_atoz);
+                                    }
+                                    var company_post_target = 'company_posttoweb(' + json[i].i + ',\'' + lang + '\');return false;';
+
+                                    $post = $('<li onclick="' + company_post_target + '"><div class="mega-lci-stockcode">' + json[i].c + '</div><div class="mega-lci-companyname">' + json[i].n + '</div></li>');
+                                    megamenu_com.append($post);
+
+                                }
+
+
+
+
+
+                            }
+                        }
+                    }
+
+
+                }
+                else {
+                    numsum = json.length;
+                    var check_value = $('.mega_menu_com-group .combobox-field').attr("data-value");
+                    var separate_item = Math.ceil(numsum / megaLcpConfig.numofcom);
+                    var separate_num = Math.round(numsum / megaLcpConfig.numofcom);
+                    for (var r = 0, n = separate_item; r <= n; r += 1) {
+                        var roman_num = toRoman(r);
+
+                        if (check_value == roman_num) {
+                            var data_range = megaLcpConfig.numofcom * r;
+                            var base_range = megaLcpConfig.numofcom;
+
+                        }
+
+                        i = data_range - base_range;
+                        if (check_value == toRoman(separate_num)) {
+                            var data_range = numsum;
+                            i = megaLcpConfig.numofcom * (r - 1);
+                        }
+                    }
+                    if (json.length < 1000) {
+                        data_range = json.length;
+                    }
+                    for (var i, row, n = data_range; i < n; i += 1) {
+
+                        var company_post_target = 'company_posttoweb(' + json[i].i + ',\'' + lang + '\');return false;';
+                        row = json[i];
+                        $post = $('<li onclick="' + company_post_target + '"><div class="mega-lci-stockcode">' + json[i].c + '</div><div class="mega-lci-companyname">' + json[i].n + '</div></li>');
+                        megamenu_com.append($post);
+                    }
+                }
+                //get category range
+                $('.mega-lci-company-list li').css("cursor", "pointer");
+                var first_range = $('#mega-company .mega-lci-company-list .mega-lci-companyname:first').text();
+                var last_range = $('#mega-company .mega-lci-company-list .mega-lci-companyname:last').text();
+                if (isNaN(first_range.substring(0, 1)) == false) {
+                    first_range = "#";
+                }
+                if (first_range != last_range) {
+                    //$('#mega-company .show_current_category .main').text(first_range.substring(0,1)+'-'+last_range.substring(0,1));
+                    $('#mega-company .show_current_category .main').text('From ' + first_range.substring(0, 1));
+                    $('#mega-company .show_current_category .sub').text('to ' + last_range.substring(0, 1));
+                }
+
+				var columnCount = 3;
+                var columnCountTablet = 2;
+                var shownRecords = $('#mega-company .mega-lci-company-list').children('li').length;
+                var toBeAdded = columnCount - (shownRecords % columnCount);
+                var toBeAddedTablet = columnCountTablet - (shownRecords % columnCountTablet);
+                if (toBeAdded != columnCount) {
+                    for (var i = 0; i < toBeAdded; i++) {
+                        var tabletHidden = (toBeAdded == 2) ? ' tablet-hidden ' : '';
+                        $('#mega-company .mega-lci-company-list').append('<li class="' + tabletHidden + 'company-col-' + (columnCount - toBeAdded + i) + '">&nbsp;</li>');
+                    }
+                } else if (toBeAddedTablet != columnCountTablet) {
+                    $('#mega-company .mega-lci-company-list').append('<li class="company-col-0">&nbsp;</li>');
+                }
+            }
+
+
+            var t1 = performance.now();
+
+        }
+    });
+
+
+    //moblie mega_menu_com
+
+
+    //menu-headline
+    var isLoading2 = false;
+    $(".mega-lci-level2-link").find("[aria-controls='mega-headline-category']").click(function () {
+        var start = performance.now();
+
+        if (isLoading2 == false) {
+            isLoading2 = true;
+            var get_json1 = megaLcpConfig.TierOneUrl;
+            var get_json2 = megaLcpConfig.TierTwoGrpUrl;
+            var get_json3 = megaLcpConfig.TierTwoUrl;
+            function LoadHeadlv1() {
+                var deferred = $.Deferred();
+                $.when(
+                    LoadMENUJSONData(get_json1, true)
+                ).done(function (data) {
+                    $.when(
+                   LoadMENUJSONData(get_json2, true)
+               ).done(function (data1) {
+                   $.when(
+                  LoadMENUJSONData(get_json3, true)
+              ).done(function (data2) {
+                  var category = $('#mega-headline-category .droplist-items');
+                  category.html('');//clear html
+                  //corssdatalength=data2.length*data1.length*data.length;
+
+
+                  for (var i = 0; i < data.length; i++) {
+                      var headline1_post_target = 'Headlinelv1_posttoweb(event,' + data[i].code + ',\'' + lang + '\');return false;';
+                      $post = $('<li class="droplist-item droplist-item-level-1" data-value="' + data[i].code + '" count="' + data[i].count + '"><a href="#" onclick="' + headline1_post_target + '" class="level-1">' + data[i].name + '</a></li>');
+
+                      category.append($post);
+                      for (var s = 0; s < data1.length; s++) {//level2
+
+                          if (data1[s].t1code == data[i].code) {
+
+                              var level2category = category.find('.level2').parent().parent().find('[data-value="' + data1[s].t1code + '"]');
+                              var level2 = level2category.find('.droplist-items');
+                              var checklevel2 = level2.find(".droplist-item-level-2");
+                              var checklevel2ul = level2category.find('.droplist-items').parent();
+                              var level2all = category.find('[data-value="' + data1[s].t1code + '"]');
+                              if (checklevel2ul.length == 0) {
+                                  $level2ul = $('<div class="droplist-group droplist-submenu level2 level2-scrollable" aria-expanded="false" ><ul class="droplist-items even-col"></ul></div>');
+                                  level2all.append($level2ul);
+                                  level2 = $level2ul.find('.droplist-items');
+                              }
+                              if (checklevel2.length == 0) {
+                                  var headline2all_post_target = 'Headlinelv2_posttoweb(event,' + data1[s].t1code + ',-2,\'' + lang + '\');return false;';
+                                  $post1ALL = $('<li class="droplist-item" data-value="-2" data-selectable="true"><a href="#" onclick="' + headline2all_post_target + '">' + textALL + '</a></li>');
+                                  if (document.documentElement.lang == "zh-HK") {
+                                      $post1ALL = $('<li class="droplist-item" data-value="-2" data-selectable="true"><a href="#" onclick="' + headline2all_post_target + '">' + textALL + '</a></li>');
+                                  }
+                                  level2.append($post1ALL);
+                              }
+                              $post1 = $('<li class="droplist-item droplist-item-level-2" data-value="' + data1[s].code + '" ><a href="#" class="level-2">' + data1[s].name + '</a><div class="droplist-group droplist-submenu  level3" aria-expanded="false"><ul class="droplist-item3s"></ul></div></li>');
+
+                              level2.append($post1);
+
+                              for (var m = 0; m < data2.length; m++) {
+
+                                  if (data2[m].t2Gcode == data1[s].code) {
+                                      var level3category = $('#mega-headline-category .droplist-item-level-2').parent().find('[data-value="' + data2[m].t2Gcode + '"]');
+                                      var level3 = level3category.find('.level3 .droplist-item3s');
+                                      var level3ALL = level3.find('.droplist-item-level-3');
+                                      if (level3ALL.length == 0) {
+                                          var headline3all_post_target = 'Headlinelv3_posttoweb(' + data2[m].t1code + ',' + data2[m].t2Gcode + ',-2,\'' + lang + '\');return false;';
+                                          $post2ALL = $('<li class="droplist-item" data-value="-2" ><a href="#" onclick="' + headline3all_post_target + '">' + textALL + '</a></li>');
+                                          if (document.documentElement.lang == "zh-HK") {
+                                              $post2ALL = $('<li class="droplist-item" data-value="-2"><a href="#" onclick="' + headline3all_post_target + '">' + textALL + '</a></li>');
+                                          }
+                                          level3.append($post2ALL);
+                                      }
+                                      var headline3_post_target = 'Headlinelv3_posttoweb(' + data2[m].t1code + ',' + data2[m].t2Gcode + ',' + data2[m].code + ',\'' + lang + '\');return false;';
+                                      $post2 = $('<li class="droplist-item droplist-item-level-3 " data-value="' + data2[m].code + '" t1code="' + data2[m].t1code + '" t2Gcode="' + data2[m].t2Gcode + '" count="' + data2[m].count + '"><a href="#" onclick="' + headline3_post_target + '" class="level-3">' + data2[m].name + '</a></li>');
+
+                                      level3.append($post2);
+                                  }
+
+
+                              }
+                          }
+                      }
+
+
+
+                  }
+                  for (z = 0; z < data2.length; z++) {
+                      if (data2[z].t2Gcode == "-1") {
+                          var category = $('#mega-headline-category .droplist-items')
+                          var level2category = category.find('.level2').parent().parent().find('[data-value="' + data2[z].t1code + '"]');
+                          var level2 = level2category.find('.droplist-items');
+                          var checklevel2 = level2.find(".droplist-item-level-2");
+                          var checklevel2ul = level2category.find('.droplist-items').parent();
+                          var level2all = category.find('[data-value="' + data2[z].t1code + '"]');
+                          if (checklevel2ul.length == 0) {
+                              $level2ul = $('<div class="droplist-group droplist-submenu level2 level2-scrollable" aria-expanded="false" ><ul class="droplist-items even-col"></ul></div>');
+                              level2all.append($level2ul);
+                          }
+                          var NCode = $('#mega-headline-category .droplist-item-level-1').parent().find('[data-value="' + data2[z].t1code + '"] .level2 .droplist-items');
+                          var NcodeALL = NCode.find(".droplist-item-level-2");
+                          if (NcodeALL.length == 0) {
+                              var headline2all_post_target = 'Headlinelv2_posttoweb(event,' + data2[z].t1code + ',-2,\'' + lang + '\');return false;';
+                              $post1ALL = $('<li class="droplist-item" data-value="-2" data-selectable="true"><a href="#" onclick="' + headline2all_post_target + '">' + textALL + '</a></li>');
+                              if (document.documentElement.lang == "zh-HK") {
+                                  $post1ALL = $('<li class="droplist-item" data-value="-2" data-selectable="true"><a href="#" onclick="' + headline2all_post_target + '">' + textALL + '</a></li>');
+                              }
+
+                              NCode.append($post1ALL);
+                          }
+                          var headline2_post_target = 'Headlinelv3_posttoweb(' + data2[z].t1code + ',' + data2[z].t2Gcode + ',' + data2[z].code + ', \'' + lang + '\');return false;';
+                          $post2 = $('<li class="droplist-item droplist-item-level-2" data-value="' + data2[z].code + '" t1code="' + data2[z].t1code + '" t2Gcode="' + data2[z].t2Gcode + '"><a href="#" onclick="' + headline2_post_target + '" class="level-2">' + data2[z].name + '</a></li>')
+                          $post2.attr('count', data2[z].count); // Add back 'count' attribute
+                          NCode.append($post2);
+                      }
+
+                  }
+                  $('.droplist-item3s').addClass("droplist-items");
+                  category.closest('.combobox-group').WidgetComboBoxField('update');
+
+                  // Bind hover events
+                  $('.mega-lci-hc-levelone .droplist-item[aria-haspopup="true"]').on('mouseover', function (e) {
+                      var a = $(this).children('a');
+                      if (a && a.length > 0 && a[0] != e.target) {
+                          return;
+                      }
+                      var items = $(this).children('.droplist-group').children('.combobox-list-scroll-div').children('.droplist-items');
+                      items.trigger('mouseover');
+
+                      // Clear sliding selection
+                      $(this).siblings('[aria-expanded=true]')
+                        .each(function () {
+                            $(this).find('[aria-haspopup="true"]').attr('aria-expanded', false);
+                        });
+                  });
+                  deferred.resolve(data2);
+              });
+                   deferred.resolve(data1);
+               });
+                    deferred.resolve(data);
+                });
+                return deferred.promise();
+
+            }
+            LoadHeadlv1();
+        }
+        $(document).ajaxComplete(function () {
+            $('.mega_menu_com-group .combobox-input-wrap').css("height", "36px");
+            /*$("#mega-headline-category .droplist-items .droplist-item-level-1").each(function () {
+                var checkempty = $(this).find('.level2').length;
+                if (checkempty != 0) {
+                    //$(this).attr('aria-haspopup', 'true');
+                    //$(this).attr('aria-expanded', 'false');
+                }
+            });
+            $("#mega-headline-category .droplist-items .droplist-item-level-2").each(function () {
+                var checklv2empty = $(this).find('.level3').length;
+                if (checklv2empty != 0) {
+                    //$(this).attr('aria-haspopup', 'true');
+                    //$(this).attr('aria-expanded', 'false');
+                }
+            });
+            $("#mega-headline-category .droplist-items droplist-item-level-3").each(function () {
+                // $(this).find('.droplist-item.')attr('data-selectable', 'true');
+            });
+*/
+
+        });
+        //
+    });
+
+	
+    // Setup container for 2-col
+    $('#mega-predefined-document .mega-lci-pd-bottom').addClass("gd-container");
+    $('#mega-predefined-document .mega-lci-pd-bottom .mega-lci-pd-list').wrap('<div class="gd-col-6 gd-col-8-md gd-col-4-sm"></div>');
+    var leftContainer = $('#mega-predefined-document .mega-lci-pd-bottom .gd-col-6').css('padding-bottom', '5px');
+    var rightContainer = leftContainer.clone().insertAfter(leftContainer);
+
+    leftContainer.prepend("<div class='mega-lci-pd-heading'></div>");
+    rightContainer.prepend("<div class='mega-lci-pd-heading'></div>");
+    leftContainer.addClass("mega-lci-pd-list-left");
+    rightContainer.addClass("mega-lci-pd-list-right gd-col-last");
+    leftContainer.after(rightContainer);
+
+    $('#mega-predefined-document .mega-lci-pd-bottom .mega-lci-pd-heading').css({
+        'margin': '.5rem 0 0',
+        'font-size': '0.875rem',
+        'font-weight': 'bold',
+        'color': '#10416c'
+    });
+    $('#mega-predefined-document .mega-lci-pd-bottom .mega-lci-pd-list').css('height', 'auto');
+
+    var isLoading3 = false;
+    $(".mega-lci-level2-link").find("[aria-controls='mega-predefined-document']").click(function () {
+
+        if (isLoading3 == false) {
+
+            isLoading3 = true;
+            var pre_document = $('#mega-predefined-document .mega-lci-pd-bottom .mega-lci-pd-list-left .mega-lci-pd-list');
+            var pre_document2 = $('#mega-predefined-document .mega-lci-pd-bottom .mega-lci-pd-list-right .mega-lci-pd-list');
+            pre_document.html(''); //clear html
+            pre_document2.html(''); //clear html
+            function LoadPredeData1() {
+                var deferred = $.Deferred();
+                $.when(
+                    LoadMENUJSONData(megaLcpConfig.PredefinedDocUrl, true)
+                ).done(function (jsondata) {
+                    pre_document.prev('.mega-lci-pd-heading').text(jsondata.heading.toUpperCase());
+                    var data = jsondata.data;
+                    for (var i = 0; i < data.length; i++) {
+                        var post_target = 'doc_posttoweb(' + data[i].code + ',\'' + lang + '\');return false;';
+                        $post = $('<li><a href ="#" onclick="' + post_target + '">' + data[i].name + '</a></li>');
+                        pre_document.append($post);
+
+                    }
+                    deferred.resolve(data);
+                });
+                return deferred.promise();
+
+            }
+            LoadPredeData1();
+
+            function LoadPredeData2() {
+                var deferred = $.Deferred();
+
+                $.when(
+
+                    LoadMENUJSONData(megaLcpConfig.PredefinedDocUrl2, true)
+
+
+
+
+                ).done(function (jsondata) {
+
+                    pre_document2.prev('.mega-lci-pd-heading').text(jsondata.heading.toUpperCase());
+                    var data2 = jsondata.data;
+
+                    for (var i = 0; i < data2.length; i++) {
+                        $post = $('<li><a href="' + data2[i].url + '">' + data2[i].name + '</a></li>');
+                        pre_document2.append($post);
+
+                    }
+
+
+
+                    deferred.resolve(data2);
+                });
+
+                return deferred.promise();
+            }
+
+
+
+            LoadPredeData2();
+            $('.mega-lci-pd-bottom').height(540);
+        }
+    });
+    //seacrh function 
+	var setupMessageBox = function ($container) {
+        var $message = $('<div></div>');
+        $message.addClass('desktop-hidden tablet-hidden mobile-hidden mega-lci-search-msg');
+		if ($container.is('.left-area')) {
+			$message.css('display', 'inline-block');
+			$message.css('padding-left', '1rem');
+		} else {
+			$message.css('padding-top', '1rem').css('padding-bottom', '1rem');
+		}
+        $container.append($message);
+    };
+    setupMessageBox($(".mega-lci-level3-top .left-area"));
+    setupMessageBox($(".mega-lci-level3-mobile-top"));
+    $(".mega-lci-level3-top .left-area").find("div.form-input-text input").attr("maxlength", 30);
+    $(".mega-lci-level3-mobile-top").find("div.form-input-text input").attr("maxlength", 30);
+	window.hideLCIMessageBox = function() {
+		$('#mega-company .mega-lci-search-msg').addClass('desktop-hidden tablet-hidden mobile-hidden');
+	};
+	window.showLCIMessageBox = function(msg, mobile) {
+		if (mobile) {
+			$(".mega-lci-level3-mobile-top").find(".mega-lci-search-msg").removeClass("mobile-hidden").text(msg);
+		} else {
+			$(".mega-lci-level3-top .left-area").find(".mega-lci-search-msg").removeClass("desktop-hidden tablet-hidden").text(msg);
+		}
+	};
+
+    // 
+    var currentSearchRequest = null;
+
+    var get_json = megaLcpConfig.ActiveStockUrl;
+    function keyupmenu_com() {
+        var deferred = $.Deferred();
+        $.when(
+            LoadMENUJSONData(megaLcpConfig.ActiveStockUrl, true)
+        ).done(function (data) {
+            $('#mega_menu_com').delayKeyup(function (el) {
+
+                var that = el;
+                var $target = $(that).parents('.active').first();
+                var results = [];
+                var keyup = ($(that).val().toUpperCase());
+
+                if (keyup.length > 0) {
+                    var results_list = $('.mega-lci-company-result-list');
+                    results_list.html('');
+                    $target.addClass('searching');
+                    hidetarget1.addClass('desktop-hidden tablet-hidden');
+                    hidetarget2.addClass('desktop-hidden tablet-hidden');
+                    hidetarget3.addClass('desktop-hidden tablet-hidden');
+					hideLCIMessageBox();
+
+                    // Do Search
+
+                    var requestParam = {
+                        lang: megaLcpConfig.Language,
+                        type: 'A',
+                        name: keyup
+                    };
+                    currentSearchRequest = $.ajax({
+                        url: megaLcpConfig.StockSearchPartialUrl,
+                        dataType: 'jsonp',
+                        data: requestParam,
+                        jsonp: "callback",
+                        jsonpCallback: 'callback',
+                        beforeSend: function () {
+                            if (currentSearchRequest != null) {
+                                currentSearchRequest.abort();
+                            }
+                        }
+                    }).done(function (searchResult) {
+						var data = searchResult.stockInfo.map(function(obj) {
+							obj.i = obj.stockId;
+							obj.c = obj.code;
+							obj.n = obj.name;
+							return obj;
+						});
+						if (data.length > 0 && data.length > megaLcpConfig.PartialSearchMaxRecords) {
+							data = data.slice(0, megaLcpConfig.PartialSearchMaxRecords);
+							showLCIMessageBox(megaLcpConfig.PartialSearchMaxMessage, false);
+						} else if (data.length == 0) {
+							showLCIMessageBox(megaLcpConfig.PartialSearchNoRecords, false);
+						}
+						var predict_headnumstock = "100";
+						var rowsToRender = [];
+						for (var i = 0; i < data.length; i++) {
+
+							if (!0 || data[i].n.toUpperCase().indexOf(keyup) > -1 || data[i].c.toUpperCase().indexOf(keyup) > -1) {
+
+
+								var reg = new RegExp('(' + lciEscapeRegexChars($(that).val()) + ')', 'gi');
+								var wordArr = data[i].n.split(reg);
+								for (var j = 0; j < wordArr.length; j++) {
+									if (wordArr[j].toUpperCase().indexOf($(that).val().toUpperCase()) != -1)
+										wordArr[j] = '<b>' + wordArr[j] + '</b>';
+								}
+								var company_post_target = 'company_posttoweb(' + data[i].i + ',\'' + lang + '\');return false;';
+								oldpost = '<li onclick="' + company_post_target + '"><div class="mega-lci-stockcode">' + data[i].c + '</div><div class="mega-lci-companyname">' + wordArr.join('') + '</div></li>';
+								if (data[i].c.toUpperCase().indexOf(keyup) > -1) {
+									var wordArr = data[i].c.split(reg);
+									for (var j = 0; j < wordArr.length; j++) {
+										if (wordArr[j].toUpperCase().indexOf($(that).val().toUpperCase()) != -1)
+											wordArr[j] = '<b>' + wordArr[j] + '</b>';
+									}
+									var company_post_target = 'company_posttoweb(' + data[i].i + ',\'' + lang + '\');return false;';
+									oldpost = '<li onclick="' + company_post_target + '"><div class="mega-lci-stockcode">' + wordArr.join('') + '</div><div class="mega-lci-companyname">' + data[i].n + '</div></li>';
+								}
+								// results_list.append(oldpost);
+								rowsToRender.push(oldpost);
+							}
+						}
+
+						HTMLRenderer.renderTo("rendersearchresult", Math.random(), results_list, rowsToRender, 200, 50);
+                    });
+                }
+
+
+
+                if (keyup.length < 1) {
+					if (currentSearchRequest != null) {
+						currentSearchRequest.abort();
+					}
+                    $target.removeClass('searching');
+                    hidetarget1.removeClass('desktop-hidden tablet-hidden');
+                    hidetarget2.removeClass('desktop-hidden tablet-hidden');
+                    hidetarget3.removeClass('desktop-hidden tablet-hidden');
+					hideLCIMessageBox();
+
+                }
+
+            }, 500);
+
+            deferred.resolve(data);
+        });
+        return deferred.promise();
+
+
+    }
+
+    //keyupmenu_com();
+
+})(jQuery);
+//moblie company serach//
+var get_json = megaLcpConfig.ActiveStockUrl;
+var lang = megaLcpConfig.Language;
+
+function keyupmobliesearch() {
+	var currentSearchRequest = null;
+    var moblie_hidetarget1 = $('#mega-company .mega-lci-level3-mobile-top .mega_menu_com-group-moblie');
+    var moblie_hidetarget2 = $('#mega-company .mega-lci-level3-mobile-top .record');
+    var moblie_hidetarget3 = $('#mega-company .mega-lci-level3-mobile-top .show_current_category');
+    var deferred = $.Deferred();
+    $.when(
+        LoadMENUJSONData(megaLcpConfig.ActiveStockUrl, true)
+    ).done(function (data) {
+        $('#mega_menu_com_mobile').delayKeyup(function (el) {
+
+            var that = el;
+            var $target = $(that).parents('.active').first();
+            var results = [];
+            var keyup = ($(that).val().toUpperCase());
+            if (keyup.length > 0) {
+                $target.addClass('searching');
+                var results_list = $('.mega-lci-company-result-list');
+                results_list.html('');
+                moblie_hidetarget1.addClass("mobile-hidden");
+                moblie_hidetarget2.addClass("mobile-hidden");
+                moblie_hidetarget3.addClass("mobile-hidden");
+				hideLCIMessageBox();
+
+                var requestParam = {
+					lang: megaLcpConfig.Language,
+					type: 'A',
+					name: keyup
+				};
+				currentSearchRequest = $.ajax({
+					url: megaLcpConfig.StockSearchPartialUrl,
+					dataType: 'jsonp',
+					data: requestParam,
+					jsonp: "callback",
+					jsonpCallback: 'callback',
+					beforeSend: function () {
+						if (currentSearchRequest != null) {
+							currentSearchRequest.abort();
+						}
+					}
+				}).done(function (searchResult) {
+					var data = searchResult.stockInfo.map(function(obj) {
+						obj.i = obj.stockId;
+						obj.c = obj.code;
+						obj.n = obj.name;
+						return obj;
+					});
+					if (data.length > 0 && data.length > megaLcpConfig.PartialSearchMaxRecords) {
+						data = data.slice(0, megaLcpConfig.PartialSearchMaxRecords);
+						showLCIMessageBox(megaLcpConfig.PartialSearchMaxMessage, true);
+					} else if (data.length == 0) {
+						showLCIMessageBox(megaLcpConfig.PartialSearchNoRecords, true);
+					}
+					var rowsToRender = [];
+					for (var i = 0; i < data.length; i++) {
+
+						if (!0 || data[i].n.toUpperCase().indexOf(keyup) > -1 || data[i].c.toUpperCase().indexOf(keyup) > -1) {
+
+							$target.addClass('searching');
+							var reg = new RegExp('(' + lciEscapeRegexChars($(that).val()) + ')', 'gi');
+							var wordArr = data[i].n.split(reg);
+							for (var j = 0; j < wordArr.length; j++) {
+								if (wordArr[j].toUpperCase().indexOf($(that).val().toUpperCase()) != -1)
+									wordArr[j] = '<b>' + wordArr[j] + '</b>';
+							}
+							var company_post_target = 'company_posttoweb(' + data[i].i + ',\'' + lang + '\');return false;';
+							oldpost = '<li onclick="' + company_post_target + '"><div class="mega-lci-stockcode">' + data[i].c + '</div><div class="mega-lci-companyname">' + wordArr.join('') + '</div></li>';
+							if (data[i].c.toUpperCase().indexOf(keyup) > -1) {
+								var wordArr = data[i].c.split(reg);
+								for (var j = 0; j < wordArr.length; j++) {
+									if (wordArr[j].toUpperCase().indexOf($(that).val().toUpperCase()) != -1)
+										wordArr[j] = '<b>' + wordArr[j] + '</b>';
+								}
+								var company_post_target = 'company_posttoweb(' + data[i].i + ',\'' + lang + '\');return false;';
+								oldpost = '<li onclick="' + company_post_target + '"><div class="mega-lci-stockcode">' + wordArr.join('') + '</div><div class="mega-lci-companyname">' + data[i].n + '</div></li>';
+							}
+
+
+
+
+
+							// results_list.append(oldpost);
+							rowsToRender.push(oldpost);
+						}
+					}
+
+					HTMLRenderer.renderTo("rendersearchresult", Math.random(), results_list, rowsToRender, 200, 50);
+				});
+            }
+            if (keyup.length < 1) {
+				if (currentSearchRequest != null) {
+					currentSearchRequest.abort();
+				}
+                $target.removeClass('searching');
+                moblie_hidetarget1.removeClass("mobile-hidden");
+                moblie_hidetarget2.removeClass("mobile-hidden");
+                moblie_hidetarget3.removeClass("mobile-hidden");
+				hideLCIMessageBox();
+            }
+
+
+
+        }, 500);
+        deferred.resolve(data);
+    });
+    return deferred.promise();
+}
+//keyupmobliesearch();
+
+$('#mega_menu_headline').delayKeyup(function (el) {
+    var that = el;
+    var a;
+    var $target = $(that).parents('.active').first();
+    var results = [];
+    var okeyup = $(that).val();
+    var keyup = ($(that).val().toUpperCase());
+    var results_list = $('.mega-lci-hc-search-result ul');
+    results_list.html('');
+    $target.addClass('searching');
+
+    // New Implement
+    // TO-DONE: Add back onclick
+    var reg = new RegExp('(' + lciEscapeRegexChars(okeyup) + ')', 'gi');
+    $('#mega-headline-category .droplist-item[count]').filter(function () {
+        var currtext = $(this).children('a').text();
+        return currtext.toUpperCase().indexOf(keyup) != -1;
+    }).each(function () {
+        var sb = [];
+		var temp =  $(this)
+			.parents('.droplist-item')
+			.add($(this));
+		var dataSize = temp.length;
+		var accumulate = 0;
+
+        temp.each(function () {
+	   
+			accumulate++;
+
+			var raw = $(this).children('a').text();
+
+			var highlighted = raw.replace(reg, '[b]$1[/b]');
+			
+			if(dataSize == 1 || dataSize == accumulate){
+						
+				if ($(this).is('[count]')) {
+					var count = $(this).attr('count');
+					highlighted += ' (' + count + ')';
+				}
+				
+			}
+
+			sb.push(highlighted);
+		});
+        	
+		var levels = sb.length;
+        var onclick = "";
+		
+        if (levels === 1) {
+
+            // Level 1 item
+            var lv1code = $(this).attr("data-value");
+            onclick = 'Headlinelv2_posttoweb(event,' + lv1code + ',-2,\'' + megaLcpConfig.Language + '\');return false;';
+        } else if (levels === 2) {
+		
+            // Level 2 item
+            var currcode = $(this).attr("data-value");
+            var lv1code = $(this).attr("t1code");
+            var t2gcode = $(this).attr("t2gcode");
+
+            onclick = 'Headlinelv3_posttoweb(' + lv1code + ',' + t2gcode + ',' + currcode + ',\'' + megaLcpConfig.Language + '\');return false;';
+        } else {
+
+            // Level 3 item
+            var currcode = $(this).attr("data-value");
+            var lv1code = $(this).attr("t1code");
+            var t2gcode = $(this).attr("t2gcode");
+            onclick = 'Headlinelv3_posttoweb(' + lv1code + ',' + t2gcode + ',' + currcode + ',\'' + megaLcpConfig.Language + '\');return false;';
+        }
+        var $li = $('<li/>').html(sb.join(" > "));
+        var html = $li.html();
+        html = html.replace(/\[b\]/g, '<b>');
+        html = html.replace(/\[\/b\]/g, '</b>');
+		
+		
+        $li.html(html);
+        if (onclick != '') {
+            $li.attr('onclick', onclick);
+        }
+        results_list.append($li);
+    });
+
+    if (keyup.length < 1) {
+        $target.removeClass('searching');
+    }
+
+
+}, 500);
+$('.main-menu .mega-menu-lci .mega-lci-level3 .tab-pane .form-input-text .mega-lci-input-close').on('click', function () {
+    var $target = $(this).parents('.active').first();
+    $(this).next('input').val('');
+    $target.removeClass('searching');
+    var hidetarget1 = $('#mega-company .mega-lci-level3-top .mega_menu_com-group');
+    var hidetarget2 = $('#mega-company .mega-lci-level3-top .record');
+    var hidetarget3 = $('#mega-company .mega-lci-level3-top .right-area');
+    var moblie_hidetarget1 = $('#mega-company .mega-lci-level3-mobile-top .mega_menu_com-group-moblie');
+    var moblie_hidetarget2 = $('#mega-company .mega-lci-level3-mobile-top .record');
+    var moblie_hidetarget3 = $('#mega-company .mega-lci-level3-mobile-top .show_current_category');
+    hidetarget1.removeClass('desktop-hidden tablet-hidden');
+    hidetarget2.removeClass('desktop-hidden tablet-hidden');
+    hidetarget3.removeClass('desktop-hidden tablet-hidden');
+    moblie_hidetarget1.removeClass("mobile-hidden");
+    moblie_hidetarget2.removeClass("mobile-hidden");
+    moblie_hidetarget3.removeClass("mobile-hidden");
+	hideLCIMessageBox();
+});
+
+
+function menu_post(path, params, method) {
+    method = method || "post";
+
+    var form = document.createElement("form");
+
+    //Move the submit function to another variable
+    //so that it doesn't get overwritten.
+    form._submit_function_ = form.submit;
+
+    form.setAttribute("method", method);
+    form.setAttribute("action", path);
+
+    for (var key in params) {
+        var hiddenField = document.createElement("input");
+        hiddenField.setAttribute("type", "hidden");
+        hiddenField.setAttribute("name", key);
+        hiddenField.setAttribute("value", params[key]);
+
+        form.appendChild(hiddenField);
+    }
+
+    document.body.appendChild(form);
+    form._submit_function_(); //Call the renamed function.
+};
+var lcpRequestMethod = 'POST';
+function company_posttoweb(id, lang) {
+	var url = megaLcpConfig.TitleSearchActionUrl;
+    var innt = {};
+    innt.category = "0";
+    innt.market = "SEHK";
+    innt.stockId = id;
+    innt.lang = lang;
+
+
+
+    menu_post(url, innt, lcpRequestMethod);
+
+};
+function Headlinelv3_posttoweb(t1code, t2groupid, t2code, lang) {
+	var url = megaLcpConfig.TitleSearchActionUrl;
+    var innt = {};
+    innt.category = "0";
+    innt.market = "SEHK";
+    innt.searchType = "1";
+    innt.t1code = t1code;
+    innt.t2Gcode = t2groupid;
+    innt.t2code = t2code;
+    innt.lang = lang;
+    menu_post(url, innt, lcpRequestMethod);
+
+};
+function Headlinelv1_posttoweb(evt, t1code, lang) {
+    var e = $(evt.target).attr('class');
+    var nochild = $(evt.target).parent().find('.level2').length;
+    if (e == "level-1" && nochild == "0") {
+        var url = megaLcpConfig.TitleSearchActionUrl;
+        var innt = {};
+        innt.category = "0";
+        innt.market = "SEHK";
+        innt.searchType = "1";
+        innt.t1code = t1code;
+        innt.lang = lang;
+        menu_post(url, innt, lcpRequestMethod);
+    }
+
+};
+function Headlinelv2_posttoweb(evt, t1code, t2groupid, lang) {
+    var e = $(evt.target).parent().attr('data-value');
+    var elist = $(evt.target).attr('onclick');
+    var check = "Headlinelv2_posttoweb";
+    var nochild = $(evt.target).parent().find('.level3').length;
+    if (nochild == "0") {
+        if (e == "-2" || elist.indexOf(check) !== -1) {
+            var url = megaLcpConfig.TitleSearchActionUrl;
+            var innt = {};
+            innt.category = "0";
+            innt.market = "SEHK";
+            innt.searchType = "1";
+            innt.t1code = t1code;
+            innt.t2Gcode = t2groupid;
+            innt.lang = lang;
+        }
+    }
+    menu_post(url, innt, lcpRequestMethod);
+
+};
+function doc_posttoweb(id, lang) {
+    var url = megaLcpConfig.PredefinedDocumentSearchUrl;
+    var innt = {};
+	innt.predefineddocuments = id;
+    innt.lang = lang;
+
+    menu_post(url, innt, lcpRequestMethod);
+
+};
+(function($) {
+	var megaMenu = $('ul.level1.main-menu__list');
+	var mainMenu = megaMenu.closest('.main-menu');
+	var levelOneLci = megaMenu.children('.lci');
+	var lciWrapper = levelOneLci.find('.mega-menu-lci-wrapper');
+	var mobileMenuTrigger = $('.topbar__mobile-menu');
+	var delay = 500;
+	
+	function openMobileMenu() {
+		var d = $.Deferred();
+		var timer;
+		var checkOpened = function() {
+			if ($('body').hasClass('show-menu')) {
+				if (timer) {
+					clearTimeout(timer);
+				}
+				d.resolve();
+			} else {
+				mobileMenuTrigger.click();
+				timer = setTimeout(checkOpened, delay);
+			}
+		};
+		
+		if (mobileMenuTrigger.is(':visible')) {
+			checkOpened();
+		} else {
+			d.resolve();
+		}
+		
+		return d.promise();
+	}
+	
+	function openLevelOne() {
+		var d = $.Deferred();
+		var timer;
+		var checkOpened = function() {
+			if (lciWrapper.is(':visible')) {
+				if (timer) {
+					clearTimeout(timer);
+				}
+				d.resolve();
+			} else {
+				levelOneLci.click();
+				timer = setTimeout(checkOpened, delay);
+			}
+		};
+		checkOpened();
+		
+		return d.promise();
+	}
+	
+	function openLciTab(tabName) {
+		var d = $.Deferred();
+		var timer;
+		var tabLink = lciWrapper.children('.mega-lci-level2').children('.mega-lci-tabs').find('.mega-lci-level2-link a[aria-controls=' + tabName + ']:visible');
+		var tabContent = $(tabLink.attr('href'));
+		var checkOpened = function() {
+			if (tabContent.is(':visible')) {
+				if (timer) {
+					clearTimeout(timer);
+				}
+				d.resolve();
+			} else {
+				tabLink.click();
+				timer = setTimeout(checkOpened, delay);
+			}
+		};
+		checkOpened();
+		return d.promise();
+	}
+	
+	function scrollUp() {
+		if (mainMenu.is('.sticky-menu:visible')) return;
+		if ($('topbar').is('.topbar-sticky:visible')) return;
+		$(window).scrollTop(0);
+	}
+	
+	window.openLciCompany = function() {
+		scrollUp();
+		openMobileMenu().then(function() {
+			return openLevelOne();
+		}).then(function() {
+			return openLciTab('mega-company');
+		});
+	};
+	
+	window.openLciHeadlines = function() {
+		scrollUp();
+		openMobileMenu().then(function() {
+			return openLevelOne();
+		}).then(function() {
+			return openLciTab('mega-headline-category');
+		});
+	};
+	
+	window.openLciPredefine = function() {
+		scrollUp();
+		openMobileMenu().then(function() {
+			return openLevelOne();
+		}).then(function() {
+			return openLciTab('mega-predefined-document');
+		});
+	};
+})(jQuery);

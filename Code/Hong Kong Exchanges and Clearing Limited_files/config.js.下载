@@ -1,0 +1,26 @@
+﻿if (typeof window.megaLcpConfig == 'undefined') {
+    window.megaLcpConfig = {};
+}
+(function (m) {
+    m.Language = 'EN';
+    m.JsonFileMimeType = "application/json; charset=UTF-8";
+    m.TierOneUrl = "/ncms/script/eds/tierone_e.json";
+    m.TierTwoUrl = "/ncms/script/eds/tiertwo_e.json";
+    m.TierTwoGrpUrl = "/ncms/script/eds/tiertwogrp_e.json";
+    m.PredefinedDocUrl = "/ncms/script/eds/pdefdoc_e.json";
+    m.PredefinedDocUrl2 = "/ncms/script/eds/pdefdoc.2_e.json";
+    m.ActiveStockUrl = "/ncms/script/eds/activestock_sehk_e.json";
+    m.InactiveStockUrl = "/ncms/script/eds/inactivestock_sehk_e.json";
+    m.TitleSearchActionUrl = "https://www1.hkexnews.hk/search/titlesearch.xhtml";
+    m.PredefinedDocumentSearchUrl = "https://www1.hkexnews.hk/search/predefineddoc.xhtml";
+    m.StockSearchPartialUrl = "https://www1.hkexnews.hk/search/partial.do?";
+    m.Label_All = "ALL";
+    m.numofcom = "1000";
+	m.jsonFailMessage = "Please refresh the webpage to get latest data: ";
+    m.PartialSearchMaxRecords = 1000;
+    m.PartialSearchMaxMessage = "Display 1,000 records only.  Please refine search.";
+	m.PartialSearchNoRecords = "Your input stock code or stock name does not exist or is invalid. Please re-enter.";
+
+    // TESTING CONFIG
+    //m.TitleSearchActionUrl = "/eds/predictive/rest/stockSearch/TitleSearch";
+})(window.megaLcpConfig);

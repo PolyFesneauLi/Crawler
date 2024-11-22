@@ -1,0 +1,610 @@
+﻿
+/* CSS Document */
+
+body,td,th {
+	font-family: Arial, Helvetica, sans-serif, 新細明體, 細明體, MingLiU_HKSCS;
+	font-size: 12px;
+}
+.body1 {
+	/*background-color: #FFFFFF;*/
+	background-image: url(../image/bkg_header.gif);
+	/*background-repeat: repeat-x;
+	margin-left: 0px;
+	margin-top: 0px;
+	margin-right: 0px;
+	margin-bottom: 0px;*/
+}
+.arial12black {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	font-size: 12px;
+	color: #000000;
+	line-height: 15px;
+}
+
+.menu:link {
+	color: #000000; LINE-HEIGHT: 1.5em; /*FONT-FAMILY: Arial;*/ font-size:12px; TEXT-DECORATION: none
+}
+.menu:visited {
+	COLOR: #000000/*#840084*/; LINE-HEIGHT: 1.5em; /*FONT-FAMILY: Arial;*/ font-size:12px; TEXT-DECORATION: none
+}
+.menu:hover {
+	COLOR: #004a89/*#ff9900*/; LINE-HEIGHT: 1.5em; /*FONT-FAMILY: Arial;*/ font-size:12px; TEXT-DECORATION: underline
+}
+
+.home:link {
+	text-decoration: none;
+	color: #000000;
+}
+.home:visited {
+	text-decoration: none;
+	color: #000000;
+}
+.home:hover {
+	text-decoration: underline;
+	color: #004A89;
+}
+.eps:link {
+	text-decoration: none;
+	color: #555555;
+}
+.eps:visited {
+	text-decoration: none;
+	color: #004A89;
+}
+.eps:hover {
+	text-decoration: underline;
+	color: #004A89;
+}
+.eps:active {
+	text-decoration: none;
+	color: #000000;
+}
+a:link {
+	text-decoration: none;
+	color: #555555;
+}
+a:visited {
+	text-decoration: none;
+	color: #555555;
+}
+a:hover {
+	text-decoration: underline;
+	color: #004A89;
+}
+a:active {
+	text-decoration: none;
+	color: #555555;
+}
+.arial18white {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	font-size: 18px;
+	color: #FFFFFF;
+}
+.arial14white {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	font-size: 14px;
+	color: #FFFFFF;
+}
+.arial12white {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	font-size: 12px;
+	color: #FFFFFF;
+}
+.arial11white {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	font-size: 11px;
+	color: #FFFFFF;
+}
+.arial14black {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	font-size: 14px;
+	color: #000000;
+}
+.arial14grey {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	font-size: 14px;
+	color: #666666;
+}
+.arial12blue {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	font-size: 12px;color: #004A89
+}
+.arial11red {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	font-size: 11px;color: #d5000d
+}
+.arial11black {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	font-size: 11px;
+	color: #000000;
+}
+.arial11grey {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	font-size: 11px;
+	color: #666666;
+}
+.arial11grey:link {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	text-decoration: none;
+	font-size: 11px;
+	color: #666666;
+}
+.arial11grey:visited {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	text-decoration: none;
+	font-size: 11px;
+	color: #666666;
+}
+.arial11grey:hover {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	text-decoration: underline;
+	font-size: 11px;
+	color: #004A89;
+}
+.arial11grey:active {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	text-decoration: none;
+	font-size: 11px;
+	color: #666666;
+}
+.arial11greyplan {
+	font-family: Arial, Helvetica, sans-serif, MingLiU_HKSCS;
+	font-size: 11px;
+	color: #666666;
+}
+
+.pming12 {
+	font-family: 新細明體, 細明體, MingLiU_HKSCS, Arial;
+	font-size: 12px;
+	line-height: 15px;
+}
+
+.pming11 {
+	font-family: 新細明體, 細明體, MingLiU_HKSCS, Arial;
+	font-size: 11px;
+}
+
+.pming11red {
+	font-family: 新細明體, 細明體, MingLiU_HKSCS, Arial;
+	font-size: 11px;
+	color: #d5000d;
+}
+.pming13 {
+	font-size: 13px;
+	font-family: 新細明體, 細明體, MingLiU_HKSCS, Arial;
+}
+
+.pming13white {
+	font-size: 13px;
+	font-family: 新細明體, 細明體, MingLiU_HKSCS, Arial;
+	color: #FFFFFF;
+}
+
+.pming14 {
+	font-size: 14px;
+	font-family: 新細明體, 細明體, MingLiU_HKSCS, Arial;
+}
+
+.pming14white {
+	font-size: 14px;
+	font-family: 新細明體, 細明體, MingLiU_HKSCS, Arial;
+	color: #FFFFFF;
+}
+.pming12blue {
+	font-family: 新細明體, 細明體, MingLiU_HKSCS, Arial;
+	font-size: 12px;
+	color: #004A89;
+}
+
+.row0{
+  background-color: #E4EAF3
+}
+
+.row1{
+   background-color: #FFFFFF
+}
+
+.table_header{
+  background-color: #D4D6ED
+}
+
+.greyBackGround{
+  background-color: #F0F0F0
+}
+
+.table_subheader{
+  background-color: #F5F5F5
+}
+
+.table_subheader_listed{
+  background-color: #A8AFD7
+}
+
+.selected{
+  background-color: #004a89
+}
+
+/* HKEx_css */
+
+
+/*** General Styles ***/
+
+.search { font: bold 12px "Verdana", "Arial", "Helvetica", "sans-serif", "MingLiU_HKSCS"; text-decoration: none ; color: 3451BA}
+.search_c { font: bold 12px "新細明體", "細明體", "MingLiU_HKSCS"; text-decoration: none ; color: 3451BA; letter-spacing: 0.15em}
+/*
+a:link {  color: #020280; text-decoration: none;}
+a:visited {  color: #020280; text-decoration: none;}
+a:hover {  color: #FF9900; text-decoration: none;}
+*/
+a.news:link {  color: #555555; text-decoration: none;}
+a.news:visited {  color: #004a89; text-decoration: none;}
+a.news:hover {  color: #004a89; text-decoration: underline;}
+/*
+a.current:link {  color: #ff9900; text-decoration: none;}
+a.current:visited {  color: #ff9900; text-decoration: none;}
+a.current:hover {  color: #FF9900; text-decoration: none;}
+*/
+
+.verd_blue125b { font: bold 12.5px "Verdana", "Arial", "Helvetica", "sans-serif", "MingLiU_HKSCS"; color: #020280; text-decoration: none; }
+.arial_blue17b { font: bold 17px "Arial", "Helvetica", "sans-serif", "MingLiU_HKSCS"; color: #003399; text-decoration: none; line-height:1.5em; }
+.verd_black13b { font: bold 13px "Verdana", "Arial", "Helvetica", "sans-serif", "MingLiU_HKSCS"; color: #000000; text-decoration: none; line-height:1.5em; }
+.verd_black12 { font: 12px "Verdana", "Arial", "Helvetica", "sans-serif", "MingLiU_HKSCS"; text-decoration: none }
+.verd_black12b { font: bold 12px "Verdana", "Arial", "Helvetica", "sans-serif", "MingLiU_HKSCS"; text-decoration: none }
+.verd_black11 { font: 11px "Verdana", "Arial", "Helvetica", "sans-serif", "MingLiU_HKSCS"; text-decoration: none }
+.current {  color: #ff9900; text-decoration: none; font-weight: bold; font-family: "Verdana", "Arial", "Helvetica", "sans-serif", "MingLiU_HKSCS"}
+.verd_grey13b { font: bold 13px "Verdana", "Arial", "Helvetica", "sans-serif", "MingLiU_HKSCS"; text-decoration: none ; color: #666666; line-height:1.5em; }
+.verd_green11 {	font: 11px "Verdana", "Arial", "Helvetica", "sans-serif", "MingLiU_HKSCS"; color: #669900; }
+
+.GemSubTitle {  font: 10px "Arial" , "Verdana", "Helvetica", "sans-serif", "MingLiU_HKSCS"; text-decoration: underline ; color: #7B4089; line-height:1.5em; }
+.GemTitle { font: bold 26px "Arial", "Verdana",  "Helvetica", "sans-serif", "MingLiU_HKSCS"; text-decoration: underline ; color: #7B4089; line-height:1.5em;  font-style: italic;}
+.UnderLineLink 
+{
+	text-decoration: underline;
+}
+
+.searchUpperTitle { font: 12px; line-height:1.5em; }
+
+.pming_black12 { font: 12px "新細明體", "細明體", "MingLiU_HKSCS"; text-decoration: none ; letter-spacing: 0.15em}
+.pming_blue13b { font: bold 13px "新細明體", "細明體", "MingLiU_HKSCS"; color: #020280; text-decoration: none ; letter-spacing: 0.15em}
+.pming_black11 { font: 11px "新細明體", "細明體", "MingLiU_HKSCS"; text-decoration: none ; letter-spacing: 0.15em}
+.pming_black125 { font: 12.5px "新細明體", "細明體", "MingLiU_HKSCS"; text-decoration: none ; letter-spacing: 0.15em}
+.pming_green12 { font: 12px "新細明體", "細明體", "MingLiU_HKSCS"; color: 669900; text-decoration: none ; letter-spacing: 0.15em}
+.pming_black14b { font: bold 14px "新細明體", "細明體", "MingLiU_HKSCS"; color: #000000; text-decoration: none ; letter-spacing: 0.15em}
+.pming_blue15b { font: bold 16px "新細明體", "細明體", "MingLiU_HKSCS"; color: #020280; text-decoration: none ; letter-spacing: 0.15em }
+.pming_blue16b { font: bold 16px "新細明體", "細明體", "MingLiU_HKSCS"; color: #020280; text-decoration: none ; letter-spacing: 0.15em }
+.pming_black135 { font: 13.5px "新細明體", "細明體", "MingLiU_HKSCS"; text-decoration: none ; letter-spacing: 0.15em }
+.pming_grey135b { font: bold 13.5px "新細明體", "細明體", "MingLiU_HKSCS"; text-decoration: none ; color: #666666 ; letter-spacing: 0.15em }
+.pming_grey14 { font: bold 14px "新細明體", "細明體", "MingLiU_HKSCS"; text-decoration: none ; color: #666666 ; letter-spacing: 0.15em }
+
+ol,ul { margin-top:0px; margin-bottom:0px; }
+
+.green_border_table TABLE.table_index_list_1 TD,
+.green_border_table TABLE.table_index_list_2 TD,
+.green_border_table TABLE.table_index_list_3 TD,
+.green_border_table TABLE.table_no_color TD { border:solid 1px #aaffaa; }
+.green_border_table TABLE.table_grey_border TD,
+.green_border_table TABLE.table_no_border TD { border:none; }
+.indexListHeader { }
+
+.announce { border:black 2px solid; padding:5px; }
+.announce_text { text-align:center; }
+
+/*** Styles for table ***/
+
+/*
+TD 
+{
+	font-family: Arial;
+	font-size:smaller;
+}
+*/
+
+TABLE.table_grey_border {
+	border: #aaaaaa 1px solid;
+	background: #ffffff;
+}
+TABLE.table_no_border {
+	background: #ffffff;
+}
+TABLE.table_no_color, 
+TABLE.table_index_list {
+	background: transparent;
+}
+TABLE.table_grey_border .tr_header, 
+TABLE.table_no_border .tr_header {
+/*	font-weight: bold; */
+	background: #b4c5dc;
+}
+TABLE.table_grey_border .tr_subheader, 
+TABLE.table_no_border .tr_subheader {
+	background: #deecf7;
+}
+TABLE.table_grey_border .tr_normal, 
+TABLE.table_no_border .tr_normal {
+	background: #f6f9fe;
+}
+TABLE.table_grey_border .tr_blank, 
+TABLE.table_no_border .tr_blank {
+	background: #ffffff;
+}
+
+
+/*** Styles for user controls ***/
+
+.TableHeader
+{
+ background-color: #336699;
+ font-family: "Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+ font-size:  medium;
+ font-weight: bold;
+ color: #FFFFFF;
+}
+.TableRelatedStockHeader
+{
+	background-color: #8cc2e8;
+	font-family: "Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+	font-size: medium;
+	font-weight: bold;
+}
+
+.ResultHeader
+{
+	font-weight: bold;
+	white-space: nowrap;
+}
+
+.TableSubHeader
+{
+	background-color: #EEEEEE;
+	font-family: "Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+	font-size: small;
+	font-weight: bold;
+}
+.TableContentStyle1
+{
+	background-color: #EEEEEE;
+	font-family: "Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+	font-size: small;
+}
+.TableContentStyle2
+{
+	background-color: #FFFFFF;
+	font-family: "Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+	font-size: small;
+}
+.StockCode
+{
+	
+	line-height: 1.5em;
+}
+.StockName
+{
+	white-space:nowrap;
+	line-height: 1.5em;
+}
+
+.phTag 
+{
+	font: 10px "Verdana", "Arial", "Helvetica", "sans-serif", "MingLiU_HKSCS"; 
+	FONT-WEIGHT: bold;
+	COLOR: #ffffff;
+	FONT-STYLE: normal;
+	BACKGROUND-COLOR: F8739F;
+	TEXT-DECORATION: none;
+	border-top-color: E6C3CE;
+	border-left-color: E6C3CE;
+	padding-right: 5px;
+	padding-left: 5px;
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+	border-top-style: solid;
+	border-right-style: solid;
+	border-bottom-style: solid;
+	border-left-style: solid;
+	border-right-color: A52A53;
+	border-bottom-color: A52A53;
+}
+.phBannerTable
+{
+	background-color:#bbbbbb;
+}
+.phBannerTitle
+{
+	background-color:#bbccdd;
+	font-family:Verdana, MingLiU_HKSCS;
+	font-size:0.75em;
+	font-weight: bold;
+}
+.phBannerBlock
+{
+	background-color:#eeeeee;
+	font-family:Verdana, MingLiU_HKSCS;
+	font-size:0.75em;
+}
+.popupText {
+	font-family: "Verdana", "Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+	font-size: 11px;
+	color: #000000;
+	vertical-align: middle;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	padding-right: 5px;
+	padding-left: 5px;
+	text-align: center;
+}
+.popupInputBox {
+	font-family: "Verdana", "Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+	font-size: 11px;
+	color: #000000;
+	vertical-align: 5%;
+	height: 18px;
+	width: 350px;
+	margin-bottom: 2px;
+}
+.popupInputBox1 {
+	font-family: "Verdana", "Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+	font-size: 11px;
+	color: #000000;
+	vertical-align: 5%;
+	height: 18px;
+	width: 30px;
+	margin-bottom: 2px;
+	margin-top: 2px;
+}
+
+.consoleButton A:link,
+.consoleButton A:visited
+{
+	color: #000000;
+	text-decoration: none;
+}
+
+.consoleStatus A:link,
+.consoleHeader A:link,
+.consoleLive A:link,
+.consoleStatus A:visited,
+.consoleHeader A:visited,
+.consoleLive A:visited
+{
+	color: #ffffff;
+	text-decoration: none;
+}
+
+.consoleStatus A:hover,
+.consoleHeader A:hover,
+.consoleLive A:hover,
+.consoleButton A:hover
+{ 
+	color: #FF9900;
+	text-decoration: none;
+}
+
+
+.consoleButton {
+	font-family: "Verdana", "Arial", "Helvetica", "sans-serif";
+	font-size: 11px;
+	text-decoration: none;
+	color: #000000;
+	margin: 0px;
+	vertical-align: middle;
+	border-top: 1px solid #FFFFFF;
+	border-right: 1px solid #666666;
+	border-bottom: 1px solid #666666;
+	border-left: 1px solid #FFFFFF;
+	padding-right: 10px;
+	padding-left: 10px;
+	background-color: #CCCCCC;
+}
+.consoleStatus {
+	font-family: "Verdana", "Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+	font-size: 10px;
+	text-decoration: none;
+	color: ffffff;
+	margin: 0px;
+	vertical-align: middle;
+	padding-right: 10px;
+	padding-left: 10px;
+}
+.consoleErrorHeader,
+.consoleHeader {
+	font-family: "Verdana", "Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+	font-size: 11px;
+	vertical-align: middle;
+	padding-right: 10px;
+	padding-left: 10px;
+	border-right: 1px solid #666666;
+	border-bottom: 1px solid #666666;
+	border-left: 1px solid #FFFFFF;
+	font-weight: bold;
+	text-align: center;
+	vertical-align: middle;
+}
+.consoleErrorHeader {
+	color: #ff3300;
+	background-color: #d6d650;
+}
+.consoleHeader {
+	color: #ffffff;
+	background-color: #c60000;
+}
+.consoleLive {
+	font-family: "Verdana", "Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+	font-size: 11px;
+	color: #FFFFFF;
+	vertical-align: middle;
+	padding-top: 1px;
+	padding-right: 60px;
+	padding-left: 60px;
+	border-top: 1px solid #999999;
+	border-right: 1px solid #666666;
+	border-bottom: 1px solid #666666;
+	border-left: 1px solid #999999;
+	background-color: 000000;
+	font-weight: bold;
+	text-align: center;
+	vertical-align: bottom;
+}
+
+.ControlTable
+{
+	background-color:#bbbbbb;
+}
+.ControlTitle
+{
+	background-color:#bbccdd;
+	font-family:Verdana, MingLiU_HKSCS;
+	font-size:0.75em;
+	font-weight: bold;
+}
+.ControlBlock
+{
+	background-color:#eeeeee;
+	font-family:Verdana, MingLiU_HKSCS;
+	font-size:0.75em;
+}
+
+.BlueHeader
+{
+		font-size: 0.8em;
+	font-family: Verdanal, MingLiU_HKSCS;
+	font-weight: bold;
+	color : #000bff;
+}
+
+.AltBackGround
+{
+	background-color:#E4EAF3;
+}
+
+.SmallFontTable1
+{
+	background-color: #FFFFFF;
+	font-size: 9pt;
+	font-style :normal;
+	font-weight: normal;
+	font-family:"Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+}
+
+.SmallFontTable2
+{
+	background-color:#E7F4FF;
+	font-size: 9pt;
+	font-style :normal;
+	font-weight: normal;
+	font-family:"Arial", "Helvetica", "sans-serif", MingLiU_HKSCS;
+}
+
+.visibleObj
+{
+	display:inline;
+}
+.hiddenObj
+{
+	display:none;
+}
+.WordWrap {
+    width: 100%;
+    word-break: break-all;
+}

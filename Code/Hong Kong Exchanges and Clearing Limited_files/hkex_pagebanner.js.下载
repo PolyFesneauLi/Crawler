@@ -1,0 +1,183 @@
+﻿(function (_c) {
+    // Short Hand to util functions
+    var isEmptyValue = _c.isEmptyValue;
+    var getValue = _c.getValue;
+    var getBooleanValue = _c.getBooleanValue;
+    var writeElement = _c.writeElement;
+    var createElement = _c.createElement;
+    var _e = _c.escapeHTML;
+    var tL = _c.transformLink;
+    var src = _c.getResourcePath("noncms_pagebanner.json");
+    var responseText = _c.loadXMLDoc(src, true);
+    var data = {};
+    if (!isEmptyValue(responseText)) {
+        data = JSON.parse(responseText);
+    }
+    var searchBarEmbedded = (window.PageBannerWithSearchBar && PageBannerWithSearchBar == true);
+    var tabBarEmbeded = (window.PageBannerForTabBar && PageBannerForTabBar == true);
+    var hideBreadcrumb = (window.PageBannerHideBreadcrumb && PageBannerHideBreadcrumb == true);
+    var pathname = location.pathname;
+    var querystring = location.search;
+
+    function getBanner(bannerClass, imageUrl, defaultBg) {
+        var bannerStyle = 'background-color:' + defaultBg;
+        if (!isEmptyValue(imageUrl)) {
+            bannerStyle = "background-image: url('" + imageUrl + "')";
+        }
+        return [
+            '<div class="',
+            bannerClass,
+            '" style="',
+            bannerStyle,
+            '"></div>'
+        ].join('');
+    }
+
+    function matchQuery(searchIn, query) {
+        var newsearch = trimAll(searchIn.toLowerCase());
+        var tmp = query.split("&");
+        if (tmp.length > 0) {
+            for (var i = 0; i < tmp.length; i++) {
+                if (newsearch.indexOf(tmp[i]) == -1) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    function checkCurrentPath(path, configData, querystring) {
+        if (typeof path == 'string') {
+            var newpath = trimAll(path.toLowerCase());
+            var getpath = false;
+            var otherpath = '';
+            if (typeof configData == 'object') {
+                for (var key in configData) {
+                    var newkey = trimAll(key.toLowerCase());
+                    if (getpath == newkey) {
+                        return key;
+                    }
+
+                    if (newpath.indexOf(newkey) == 0) {
+                        getpath = true;
+                        if (key.length > otherpath.length) {
+                            otherpath = key;
+                        }
+                    } else if (newkey.indexOf('?') != -1) {
+                        var tmp = newkey.split("?", 2);
+                        if (tmp[0] == newpath) {
+                            if (!isEmptyValue(querystring) && tmp.length == 2 && !isEmptyValue(tmp[1])) {
+                                if (matchQuery(querystring, tmp[1])) {
+                                    getpath = true;
+                                    if (key.length > otherpath.length) {
+                                        otherpath = key;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (getpath) {
+                    return otherpath;
+                }
+            }
+        }
+        return path;
+    }
+
+    var display = true;
+    if (display) {
+        var extraClass = '';
+        if (searchBarEmbedded) {
+            extraClass += ' banner__container-search-bar ';
+        }
+        if (tabBarEmbeded) {
+            extraClass += ' banner__container-tabbar ';
+        }
+        var config = _c.get(data, "config", {});
+        var defaultBackground = getValue(data, "default.bgColor");
+        var pathKey = checkCurrentPath(pathname, config, querystring);
+        var manualKey = _c.getMetaContent('manualPath');
+        if (!isEmptyValue(manualKey)) {
+            pathKey = manualKey;
+        }
+        var pageConfig = {};
+        if (config[pathKey]) {
+            pageConfig = config[pathKey];
+        }
+
+        // Page Render
+        var defaultTitle = "";
+        if (!isEmptyValue(window.pageDefaultTitle)) {
+            defaultTitle = pageDefaultTitle;
+            pageConfig["title"] = defaultTitle;
+        }
+        var defaultSubTitle = "";
+        if (!isEmptyValue(window.pageDefaultSubTitle)) {
+            defaultSubTitle = pageDefaultSubTitle;
+            pageConfig["subtitle"] = defaultSubTitle;
+        }
+        if (!isEmptyValue(window.pageDefaultBanner)) {
+            pageConfig["pc_banner"] = window.pageDefaultBanner;
+        }
+        if (!isEmptyValue(window.pageDefaultTabletBanner)) {
+            pageConfig["tablet_banner"] = window.pageDefaultTabletBanner;
+        }
+        if (window.overrideBreadcrumb) {
+            pageConfig["breadcrumb"] = window.overrideBreadcrumb;
+        }
+        var pcBanner = getValue(pageConfig, "pc_banner");
+        var tbBanner = getValue(pageConfig, "tablet_banner");
+        var breadcrumb = _c.get(pageConfig, "breadcrumb", []);
+        var title = _c.get(pageConfig, "title", defaultTitle);
+        var subtitle = _c.get(pageConfig, "subtitle", defaultSubTitle);
+        var tools = _c.get(pageConfig, "tools", {});
+        if (window.overridePageTools) {
+            tools = window.overridePageTools
+        }
+
+        document.write('<div id="hkex_news_topbanner">');
+        document.write('<section class="banner banner__mobile_breadcrumb banner__head">');
+        document.write('<div class="banner__background-container">');
+        document.write(getBanner("banner__background", pcBanner, defaultBackground));
+        document.write(getBanner("banner__background-tablet", tbBanner, defaultBackground));
+        document.write('</div>'); // END of banner__background-container
+        document.write('<div class="banner__container ' + extraClass + '">');
+        if (hideBreadcrumb !== true) {
+            // Write banner__breadcrumb
+            if (breadcrumb) {
+                breadcrumb = breadcrumb.reverse();
+            }
+            var breadcrumbContainer = new _c.Widget.Breadcrumb(breadcrumb);
+            writeElement(breadcrumbContainer.create());
+        }
+        // Write Heading
+        document.write('<h1 class="container banner__pageheading">' + _e(title) + '</h1>');
+        if (!isEmptyValue(subtitle)) {
+            document.write('<h2 class="container banner__pagesubheading">' + _e(subtitle) + '</h2>');
+        }
+        // Write tools
+        var toolsContainer = new _c.Widget.PageBannerTools();
+        var showlastupdate = getBooleanValue(getValue(tools, "showlastupdate"));
+        var lastupdate = getValue(tools, "lastupdate");
+        var showprint = getBooleanValue(getValue(tools, "showprint"));
+        var printfriend = getValue(tools, "printfriend");
+        var links = _c.get(tools, "links", []);
+        toolsContainer.setLastUpdate(showlastupdate, lastupdate);
+        toolsContainer.setPrintFriendly(showprint, printfriend);
+        toolsContainer.setLinks(links);
+        writeElement(toolsContainer.create());
+        document.write('</div>'); // END of banner__container
+        document.write('</section>'); // END of banner__mobile_breadcrumb
+        document.write('</div>'); // END of hkex_news_topbanner
+    }
+
+    // Move Search Bar Into PageBanner
+    var searchBar = document.getElementById("hkex_news_header_section");
+    var topBanner = document.getElementById("hkex_news_topbanner");
+    if (searchBar) {
+        var bgContainer = topBanner.children[0].children[0];
+        bgContainer.parentNode.insertBefore(searchBar, bgContainer.nextSibling);
+    }
+})(window.hkexCMS);

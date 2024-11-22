@@ -1,0 +1,32 @@
+﻿var OT_DOMAIN = 'cdn-apac.onetrust.com';
+var OT_OPTANONID = '025442d0-f6e9-4f7f-ba97-54d2c1d5e47b';
+//handle di hkex cookie
+if(location.hostname == 'di.hkex.com.hk') {
+  OT_OPTANONID = '969a96a7-7699-4237-8be4-e85a7677c464';
+}
+var CMS_DOMAIN = 'www2.hkexnews.hk';
+var WWW_DOMAIN = 'www.hkexnews.hk';
+var EDS_DOMAIN = 'www3.hkexnews.hk';  
+var HKEX_DOMAINS = {};
+HKEX_DOMAINS[CMS_DOMAIN] = 'www2.hkexnews.hk';
+HKEX_DOMAINS[WWW_DOMAIN] = 'www.hkexnews.hk';
+HKEX_DOMAINS[EDS_DOMAIN] = 'www3.hkexnews.hk';
+
+//HKEX_DOMAINS[CMS_DOMAIN] = 'www2.hkexnews.hk';
+//HKEX_DOMAINS[WWW_DOMAIN] = 'www.hkexnews.hk';
+//HKEX_DOMAINS[EDS_DOMAIN] = 'www.hkexnews.hk';
+
+
+var HKEXNEWS_ENV = ''; //for production site
+//var HKEXNEWS_ENV = 'staging'; //for staging site
+
+var HANWEB_DOMAINS = [];
+HANWEB_DOMAINS.push("http://sdinotice.hkex.com.hk");
+HANWEB_DOMAINS.push("di.hkex.com.hk");
+HANWEB_DOMAINS.push(CMS_DOMAIN);
+HANWEB_DOMAINS.push(WWW_DOMAIN);
+HANWEB_DOMAINS.push(EDS_DOMAIN);
+var HKEX_HANWEB_DOMAINS = [];
+HKEX_HANWEB_DOMAINS.push("www.hkex.com.hk");
+HKEX_HANWEB_DOMAINS.push("www.hkgem.com");
+HKEX_HANWEB_DOMAINS.push("www.hkexgroup.com.hk");

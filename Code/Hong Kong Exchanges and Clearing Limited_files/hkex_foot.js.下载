@@ -1,0 +1,241 @@
+﻿(function (_c) {
+    // Short Hand to util functions
+    var isEmptyValue = _c.isEmptyValue;
+    var getValue = _c.getValue;
+    var getBooleanValue = _c.getBooleanValue;
+    var writeElement = _c.writeElement;
+    var createElement = _c.createElement;
+    var _e = _c.escapeHTML;
+    var tL = _c.transformLink;
+    var foot_data_src = _c.getResourcePath("noncms_foot.json");
+    var responseText = _c.loadXMLDoc(foot_data_src, true);
+    var data = {};
+    if (isEmptyValue(responseText)) {
+        data = {};
+    } else {
+        data = JSON.parse(responseText);
+    }
+    var logoUrl = wwwhkexnews_index_url;
+
+    document.write('<div class="overlay"></div>');
+    document.write('<div id="hkex_news_footer" class="noindex">');
+    document.write('<footer>');
+    document.write('<div class="container">');
+    document.write('<div class="footer__logo">');
+    (function () {
+        var a = document.createElement("a");
+        a.href = tL(logoUrl);
+        a.title = getValue(data, "logo.alt");
+        var img = document.createElement("img");
+        img.src = getValue(data, "logo.img");
+        img.alt = getValue(data, "logo.alt");
+        a.appendChild(img);
+        writeElement(a);
+    })();
+    document.write('</div>'); // END of footer__logo
+    document.write('<ul class="footer__social-icons">');
+    var socialIcons = _c.get(data, "sns", {});
+    var writeSocialItem = function (snsData) {
+        var url = getValue(snsData, "url");
+        if (url && url == "javascript:void(0)") {
+            return;
+        }
+        var title = getValue(snsData, "title");
+        var li = document.createElement("li");
+        var a = document.createElement("a");
+        a.href = tL(getValue(snsData, "url"));
+        a.target = getValue(snsData, "target");
+        a.title = title;
+        var img = document.createElement("img");
+        var imgLink = getValue(snsData, "image_url");
+        if (imgLink.indexOf("/images/HKEX/HKEX NEWS/") == 0) {
+            imgLink = imgLink.replace("/images/HKEX/HKEX NEWS/", "/images/");
+        }
+        if (imgLink.indexOf("/images/HKEX/HKEXnews/") == 0) {
+            imgLink = imgLink.replace("/images/HKEX/HKEXnews/", "/images/");
+        }
+        if (imgLink.indexOf("/images/") == 0) {
+            imgLink = "/ncms" + imgLink;
+        }
+        img.src = imgLink;
+        img.alt = title;
+        a.appendChild(img);
+        li.appendChild(a);
+        writeElement(li);
+    };
+    if (socialIcons) {
+        for (var provider in socialIcons) {
+            writeSocialItem(socialIcons[provider]);
+        }
+    }
+    document.write('</ul>');
+    // SiteMap
+    document.write('<section class="footer-sitemap">');
+    document.write('<div class="footer-sitemap__wrapper">');
+    var sitemap = _c.get(data, "sitemap", {});
+    var count = 1;
+    var createSitemapList = function (listItems, currentLevel, clazz) {
+        var isLastCol = clazz.indexOf("footer-sitemap-nav--last") != -1;
+        var ul = document.createElement("ul");
+        var nextLevel = (currentLevel + 1);
+        ul.className = clazz;
+        if (listItems) {
+            for (var i = 0; i < listItems.length; i++) {
+                var listData = listItems[i];
+                var title = getValue(listData, "title");
+                var is4col = currentLevel == 1 && getBooleanValue(_c.get(listData, "is4col", 0));
+                var li = document.createElement("li");
+                var classes = [];
+                if (currentLevel == 1) {
+                    classes.push(is4col ? "footer-sitemap-nav__col-4" : "footer-sitemap-nav__col-2");
+                    classes.push("footer-sitemap-nav__level1-item footer-sitemap-nav__col-8-tablet");
+                    if (isLastCol && i == (listItems.length - 1)) {
+                        classes.push("footer-sitemap-nav--last");
+                    }
+                    var panelTarget = 'footer-sitemap-' + count;
+                    var a = createElement("a", {
+                        'data-toggle': "collapse",
+                        'href': '#',
+                        'aria-expanded': 'false',
+                        'title': title,
+                        'data-target': '#' + panelTarget
+                    });
+                    a.className = 'footer-sitemap-nav__level1-link';
+                    a.insertAdjacentHTML("beforeend", _c.escapeHTMLEntities(title));
+                    li.appendChild(a);
+                    var panel = createElement("div", {
+                        'aria-expanded': 'false'
+                    });
+                    panel.id = panelTarget;
+                    panel.className = 'collapse footer-sitemap-menu';
+
+                    li.appendChild(panel);
+                    var nextLevelClasses = ["footer-sitemap-nav__level2-list"];
+                    nextLevelClasses.push("footer-sitemap-level3");
+                    if (is4col) {
+                        nextLevelClasses.push("footer-sitemap-nav__col-8-tablet");
+                        nextLevelClasses.push("footer-sitemap-nav__col-2");
+                        if (listData.l || listData.r) {
+                            var _clz = nextLevelClasses.join(' ');
+                            // L
+                            var lSublist = createSitemapList(listData.l, nextLevel, _clz);
+                            panel.appendChild(lSublist);
+
+                            // R
+                            nextLevelClasses.push("footer-sitemap__noBorder footer-sitemap-nav--last");
+                            _clz = nextLevelClasses.join(' ');
+                            var rSublist = createSitemapList(listData.r, nextLevel, _clz);
+                            panel.appendChild(rSublist);
+                        }
+                    } else {
+                        if (listData.children) {
+                            var _clz = nextLevelClasses.join(' ');
+                            var sublist = createSitemapList(listData.children, nextLevel, _clz);
+                            panel.appendChild(sublist);
+                        }
+                    }
+                    count++;
+                } else {
+                    if (currentLevel > 2) {
+                        classes.push('footer-sitemap-nav__level' + currentLevel + '-item');
+                    } else {
+                        classes.push('footer-sitemap-nav__item');
+                    }
+
+                    var haslink = getBooleanValue(_c.get(listData, "haslink", 0));
+                    var external = getBooleanValue(_c.get(listData, "external", 0));
+                    var filetype = getValue(listData, "filetype");
+                    var url = getValue(listData, "url");
+                    var target = getValue(listData, "target");
+                    var children = _c.get(listData, "children");
+                    var inner;
+                    var innerClasses = [];
+
+                    if (haslink) {
+                        inner = createElement("a", {
+                            title: title
+                        });
+                        inner.insertAdjacentHTML("beforeend", _c.escapeHTMLEntities(title));
+                        inner.href = tL(url);
+                        inner.target = target;
+                        if (external) {
+                            innerClasses.push(' related-site-link-icon');
+                        } else if (!isEmptyValue(filetype)) {
+                            var ftspan = createElement('span');
+                            ftspan.className = filetype;
+                            inner.appendChild(ftspan);
+                        }
+                    } else {
+                        inner = createElement("span");
+                        innerClasses.push('footer-sitemap-nav__level' + currentLevel + '-text');
+                        inner.insertAdjacentHTML("beforeend", _c.escapeHTMLEntities(title));
+                    }
+                    inner.className = innerClasses.join(' ');
+                    li.appendChild(inner);
+
+                    if (currentLevel < 3 && children) {
+                        if (children.length > 0) {
+                            var sublist = createSitemapList(children, nextLevel, "footer-sitemap-nav__level3-list");
+                            li.appendChild(sublist);
+                        }
+                    }
+                }
+                li.className = classes.join(" ");
+                ul.appendChild(li);
+            }
+        }
+        return ul;
+    };
+    if (sitemap) {
+        writeElement(createSitemapList(sitemap.l, 1, "footer-sitemap-level2 footer-sitemap-one footer-sitemap-nav__col-4-tablet"));
+        writeElement(createSitemapList(sitemap.r, 1, "footer-sitemap-level2 footer-sitemap-one footer-sitemap-nav__col-4-tablet footer-sitemap-nav--last"));
+    }
+    document.write('</div>'); // END of footer-sitemap__wrapper
+    document.write('</section>');
+    document.write('<div class="footer__clearBoth footer__divider"></div>');
+    // Footer Navs
+    document.write('<ul class="footer__nav">');
+    var navs = _c.get(data, "nav", []);
+    var writeNavLink = function (navData) {
+        var title = getValue(navData, "title");
+        var li = document.createElement("li");
+        li.className = 'footer__nav-item';
+        var a = document.createElement("a");
+        a.className = 'footer__nav-link';
+        a.href = tL(getValue(navData, "url"));
+        a.target = getValue(navData, "target");
+        a.title = title;
+        a.insertAdjacentHTML("beforeend", _c.escapeHTMLEntities(title));
+        li.appendChild(a);
+        writeElement(li);
+    };
+    if (navs) {
+        for (var i = 0; i < navs.length; i++) {
+            writeNavLink(navs[i]);
+        }
+    }
+    document.write('</ul>');
+    document.write('<div class="footer__clearBoth"></div>');
+    document.write('<p class="footer__privacy">' + _e(getValue(data, "copyright")) + '</p>');
+    document.write('</div>'); // END of container
+    document.write('</footer>');
+    document.write('</div>'); // END of hkex_news_footer
+
+    document.write(_c.getScriptBlock('optanon-category-C0004', 'if(!window.adobeDataLayer) {window.adobeDataLayer = window.adobeDataLayer || [];}adobeDataLayer.push({event: "pageview", environment:"production", site_code: "DIWS" });'));
+
+
+
+    // Import Mega LCP
+    $("[data-lcp-html]").each(function () {
+        var that = this;
+        $.ajax({
+            url: $(this).attr('data-lcp-html'),
+            async: false,
+            cache: false,
+            dataType: 'html'
+        }).done(function (html) {
+            $(that).html(html);
+            $(that).removeAttr('data-lcp-html');
+        });
+    });
+})(window.hkexCMS);

@@ -1,0 +1,787 @@
+﻿(function (_c) {
+    // Short Hand to util functions
+    var isEmptyValue = _c.isEmptyValue;
+    var getValue = _c.getValue;
+    var getBooleanValue = _c.getBooleanValue;
+    var writeElement = _c.writeElement;
+    var createElement = _c.createElement;
+    var _e = _c.escapeHTML;
+    var tL = _c.transformLink;
+    var scImg = _c.convertScLink;
+    var htmlEntityRegex = new RegExp('&amp;#(x[\\da-f]+|\\d+);', 'ig');
+    var _eHTML = function (str) {
+        if (str) {
+            str = _e(str);
+            if (str.indexOf("&amp;#") !== -1) {
+                str = str.replace(htmlEntityRegex, "&#$1;");
+            }
+        }
+        return str;
+    };
+
+    function createGeneralLink(linkData, innerText) {
+        var a = createElement('a');
+        var url = getValue(linkData, "url");
+        var title = getValue(linkData, "title");
+        var target = getValue(linkData, "target");
+        var external = getBooleanValue(_c.get(linkData, "external", 0));
+        var ft = getValue(linkData, "filetype");
+        a.href = tL(url);
+        a.title = title;
+        a.target = target;
+        var span = createElement('span');
+        if (external) {
+            span.className = "related-site-link-icon";
+        } else if (!isEmptyValue(ft)) {
+            span.className = ft;
+        }
+        if (innerText) {
+            span.insertAdjacentHTML("beforeend", _eHTML(title));
+        } else {
+            a.insertAdjacentHTML("beforeend", _eHTML(title));
+        }
+        a.appendChild(span);
+        return a;
+    }
+
+    function SectionPanel(title) {
+        this.title = title;
+        this.boldTitle = false;
+        this.icon = '';
+        this.iconBackground = '';
+        this.withNewIcon = false;
+        this.extraClasses = [];
+        this.bodyEl = null;
+        this.footerEl = null;
+    }
+
+    SectionPanel.prototype = {
+        addClass: function(clazz) {
+            if (this.extraClasses.indexOf(clazz) == -1) {
+                this.extraClasses.push(clazz);
+            }
+        },
+        setBody: function(el) {
+            this.bodyEl = el;
+        },
+        setFooter: function (el) {
+            this.footerEl = el;
+        },
+        setNewTag: function (show) {
+            this.withNewIcon = (show == true);
+        },
+        setIcon: function (icon) {
+            this.icon = icon;
+        },
+        setIconBackground: function (color) {
+            this.iconBackground = color;
+        },
+        setTitle: function (title) {
+            this.title = title;
+        },
+        setBoldTitle: function (bold) {
+            this.boldTitle = (bold == true);
+        },
+        _getSectionClass: function() {
+            var cls = ['section-panel'];
+            if (this.extraClasses && this.extraClasses.length > 0) {
+                for (var i = 0; i < this.extraClasses.length; i++) {
+                    cls.push(this.extraClasses[i]);
+                }
+            }
+            return cls.join(' ');
+        },
+        _getSectionHeaderClass: function () {
+            var cls = ['section-panel-head'];
+            if (this.boldTitle) {
+                cls.push('section-panel--title');
+            }
+            return cls.join(' ');
+        },
+        _getSectionBodyClass: function () {
+            var cls = ['section-panel-body'];
+            return cls.join(' ');
+        },
+        _getSectionFooterClass: function () {
+            var cls = ['section-panel-footer'];
+            return cls.join(' ');
+        },
+        _renderSectionHeader: function() {
+            var head = createElement("div");
+            head.className = this._getSectionHeaderClass();
+            var container = createElement("div");
+            var containerClasses = ['section-panel-head--container'];
+
+            // Icon
+            if (this.icon != '') {
+                containerClasses.push('has-head-icon');
+                var icon = createElement('div');
+                icon.className = 'section-panel-head--icon';
+                icon.style.backgroundImage = "url(" + this.icon + ")";
+                if (this.iconBackground) {
+                    icon.style.backgroundColor = '#' + this.iconBackground;
+                }
+                head.appendChild(icon);
+            }
+            // Text
+            var textNode = _eHTML(this.title);
+            container.insertAdjacentHTML("beforeend", textNode);
+            // New Tag
+            if (this.withNewIcon) {
+                var tag = createElement('span');
+                tag.className = 'tag-img-new rhs-tag';
+                container.appendChild(tag);
+            }
+
+            container.className = containerClasses.join(' ');
+            head.appendChild(container);
+            return head;
+        },
+        _renderSectionBody: function() {
+            var body = createElement("div");
+            body.className = this._getSectionBodyClass();
+            if (this.bodyEl) {
+                if (typeof this.bodyEl == 'string') {
+                    body.innerHTML = this.bodyEl;
+                } else if (this.bodyEl && this.bodyEl.tagName) {
+                    body.appendChild(this.bodyEl);
+                }
+            }
+            var footer = this._renderSectionFooter();
+            if (footer) {
+                body.appendChild(footer);
+            }
+            return body;
+        },
+        _renderSectionFooter: function () {
+            if (this.footerEl) {
+                var footer = createElement("div");
+                footer.className = this._getSectionFooterClass();
+                if (this.bodyEl) {
+                    if (typeof this.footerEl == 'string') {
+                        footer.innerHTML = this.footerEl;
+                    } else if (this.footerEl && this.footerEl.tagName) {
+                        footer.appendChild(this.footerEl);
+                    }
+                }
+                return footer;
+            }
+            return null;
+        },
+        render: function () {
+            var section = createElement("div");
+            section.className = this._getSectionClass();
+            section.appendChild(this._renderSectionHeader());
+            section.appendChild(this._renderSectionBody());
+            writeElement(section);
+        }
+    };
+
+    CollapseContainer.idSeed = 1;
+
+    function CollapseContainer(id) {
+        this.id = id || "collapse-container-id-" + (CollapseContainer.idSeed++);
+        this.panels = [];
+    }
+
+    CollapseContainer.prototype = {
+        addPanel: function (panel) {
+            this.panels.push(panel);
+        },
+        create: function () {
+            var container = createElement("div");
+            container.className = 'collapse-container common-collapse-container';
+            container.id = this.id;
+            if (this.panels) {
+                for (var i = 0; i < this.panels.length; i++) {
+                    var panel = this.panels[i];
+                    container.appendChild(panel);
+                }
+            }
+            return container;
+        },
+        render: function () {
+            var container = this.create();
+            writeElement(container);
+        }
+    };
+
+    CollapsePanel.idSeed = 1;
+
+    function CollapsePanel(heading) {
+        this.heading = heading;
+        this.headNewTag = false;
+        this.expanded = false;
+        this.id = "collapse-panel-id-" + (CollapsePanel.idSeed++);
+        this.bodyEl = null;
+        this.parentId = null;
+    }
+
+    CollapsePanel.prototype = {
+        setHeading: function (heading) {
+            this.heading = heading;
+        },
+        setHeadNewTag: function (show) {
+            this.headNewTag = (show == true);
+        },
+        setExpanded: function (expanded) {
+            this.expanded = (expanded == true);
+        },
+        setBody: function (el) {
+            this.bodyEl = el;
+        },
+        setParentId: function(id) {
+            this.parentId = id;
+        },
+        _createHeading: function () {
+            var heading = createElement("a", {
+                'data-toggle': 'collapse',
+                'aria-expanded': this.expanded ? 'true' : 'false'
+            });
+            if (this.parentId) {
+                heading.setAttribute("data-parent", '#' + this.parentId);
+            }
+            heading.href = '#' + this.id;
+            heading.className = 'panel-heading';
+            // New Tag
+            if (this.headNewTag) {
+                var tag = createElement('span');
+                tag.className = 'tag-img-new2';
+                heading.appendChild(tag);
+            }
+            var textNode = _eHTML(this.heading);
+            heading.insertAdjacentHTML('beforeend', textNode);
+            return heading;
+        },
+        _createBody: function () {
+            var panel = createElement("div", {
+                'aria-expanded': this.expanded ? 'true' : 'false'
+            });
+            panel.id = this.id;
+            var panelClasses = ['collapse  panel-body'];
+            if (this.expanded) {
+                panelClasses.push('in');
+            }
+            var panelContent = createElement("div");
+            panelContent.className = 'panel-content';
+            if (this.bodyEl) {
+                if (typeof this.bodyEl == 'string') {
+                    panelContent.innerHTML = this.bodyEl;
+                } else if (this.bodyEl && this.bodyEl.tagName) {
+                    panelContent.appendChild(this.bodyEl);
+                }
+            }
+            panel.appendChild(panelContent);
+            panel.className = panelClasses.join(' ');
+            return panel;
+        },
+        create: function () {
+            var panel = createElement("div");
+            panel.className = 'panel';
+            panel.appendChild(this._createHeading());
+            panel.appendChild(this._createBody());
+            return panel;
+        }
+    };
+
+    QuickLinks.SUPPORTED = ["right", "left", "rightwithimage"];
+
+    function QuickLinks(style, links) {
+        this.links = links || [];
+        this.style = style;
+    }
+    QuickLinks.prototype = {
+        _getListClass: function() {
+            var c = [];
+            if (this.style == "right") {
+                c.push('quick-link-list-tablet-mobile quick-link-list');
+            } else if (this.style == "left") {
+                c.push('home-quick-link-list-tablet-mobile home-quick-link-list');
+            } else if (this.style == "rightwithimage") {
+                c.push('submission-list');
+            }
+            return c.join(' ');
+        },
+        _createLink: function(linkData) {
+            return createGeneralLink(linkData, true);
+        },
+        createListItem: function(index, linkData, listItems) {
+            if (QuickLinks.SUPPORTED.indexOf(this.style) == -1) {
+                return null;
+            }
+            var li = createElement("li");
+            if (this.style == "right" || this.style == "left") {
+                var sublinks = _c.get(linkData, "sublinks", null);
+                if (sublinks) {
+                    li.className = 'nolink';
+                    var title = getValue(linkData, "title");
+                    var span = createElement("span");
+                    span.className = "quick-link-text";
+                    span.insertAdjacentHTML("beforeend", _eHTML(title));
+                    var subDiv = createElement("div");
+                    subDiv.className = 'quick-link-links';
+                    for (var i = 0; i < sublinks.length; i++) {
+                        // vertical-bar
+                        if (i > 0) {
+                            var vSpan = createElement("span");
+                            vSpan.className = "vertical-bar";
+                            vSpan.innerHTML = "&nbsp;&nbsp;&nbsp;";
+                            subDiv.appendChild(vSpan);
+                        }
+                        var sublink = sublinks[i];
+                        (function () {
+                            var url = getValue(sublink, "url");
+                            var title = getValue(sublink, "title");
+                            var target = getValue(sublink, "target");
+                            var external = getBooleanValue(_c.get(sublink, "external", 0));
+                            var ft = getValue(sublink, "filetype");
+
+                            var span = createElement("span");
+                            var a = createElement("a");
+                            a.title = title;
+                            a.target = target;
+                            a.href = tL(url);
+                            a.insertAdjacentHTML("beforeend", _eHTML(title));
+                            if (external) {
+                                a.className = "related-site-link-icon";
+                            } else if (!isEmptyValue(ft)) {
+                                var ftspan = createElement("span");
+                                ftspan.className = ft;
+                                a.appendChild(ftspan);
+                            }
+                            span.appendChild(a);
+                            subDiv.appendChild(span);
+                        })();
+                    }
+                    li.appendChild(span);
+                    li.appendChild(subDiv);
+                } else {
+                    li.appendChild(this._createLink(linkData));
+                }
+            } else if (this.style == "rightwithimage") {
+                var liClz = ["submission-list-item"];
+                if (listItems.length > 0 && index < (listItems.length - 1)) {
+                    liClz.push("submission-list-item__border-bottom");
+                }
+                var url = getValue(linkData, "url");
+                var title = getValue(linkData, "title");
+                var target = getValue(linkData, "target");
+                var external = getBooleanValue(_c.get(linkData, "external", 0));
+                var ft = getValue(linkData, "filetype");
+                var img = getValue(linkData, "img");
+                var alt = getValue(linkData, "alt");
+                var desc = getValue(linkData, "desc");
+                var hasLeftDiv = false;
+
+                if (!isEmptyValue(img)) {
+                    var leftDiv = createElement("div");
+                    leftDiv.className = 'submission-list-left';
+                    (function () {
+                        var a = createElement("a");
+                        a.href = tL(url);
+                        a.title = title;
+                        a.target = target;
+                        var imgEl = createElement("img");
+                        imgEl.src = scImg(img);
+                        imgEl.alt = alt;
+                        a.appendChild(imgEl);
+                        leftDiv.appendChild(a);
+                    })();
+                    li.appendChild(leftDiv);
+                    hasLeftDiv = true;
+                }
+
+                var rightDiv = createElement("div");
+                if (hasLeftDiv) {
+                    rightDiv.className = 'submission-list-right';
+                } else {
+                    rightDiv.className = 'submission-list-right submission-list-item__full-width';
+                }
+                var titleDiv = createElement('div');
+                titleDiv.className = 'submission-list-title';
+                var h2 = createElement('h2');
+                (function () {
+                    var a = createElement("a");
+                    a.href = tL(url);
+                    a.title = title;
+                    a.target = target;
+                    a.insertAdjacentHTML("beforeend", _eHTML(title));
+                    if (external) {
+                        a.className = 'related-site-link-icon';
+                    }
+                    h2.appendChild(a);
+                })();
+                titleDiv.appendChild(h2);
+                rightDiv.appendChild(titleDiv);
+                var contentDiv = createElement('div');
+                contentDiv.className = 'submission-list-content';
+                contentDiv.innerHTML = desc;
+                rightDiv.appendChild(contentDiv);
+                li.appendChild(rightDiv);
+                li.className = liClz.join(' ');
+            }
+            return li;
+        },
+        create: function () {
+            var list = createElement("ul");
+            list.className = this._getListClass();
+            if (this.links && this.links.length > 0) {
+                for (var i = 0; i < this.links.length; i++) {
+                    var li = this.createListItem(i, this.links[i], this.links);
+                    if (li) {
+                        list.appendChild(li);
+                    }
+                }
+            }
+            return list;
+        }
+    };
+
+    function TwinCard() {
+        this.leftEl = null;
+        this.rightEl = null;
+    }
+    TwinCard.prototype = {
+        setLeftLink: function(linkData) {
+            this.leftEl = this._createBannerLink(linkData);
+        },
+        setRightLink: function (linkData) {
+            this.rightEl = this._createBannerLink(linkData);
+        },
+        _createLink: createGeneralLink,
+        _createBannerLink: function(linkData) {
+            var div = createElement('div');
+            var img = getValue(linkData, "bg");
+            div.className = 'blueBannerWithQuickLink';
+            if (!isEmptyValue(img)) {
+                div.style.backgroundImage = "url(" + scImg(img) + ")";
+            }
+            var text = createElement("div");
+            text.className = 'blueBannerWithQuickLink-text';
+            var a = this._createLink(linkData);
+            a.className = [a.className ? a.className : '', 'blueBannerWithQuickLink-text-link'].join(' ').trim();
+            text.appendChild(a);
+            div.appendChild(text);
+            return div;
+        },
+        _createSection: function(left) {
+            var div = createElement('div');
+            if (left) {
+                div.className = 'next-steps-section-left';
+                if (typeof this.leftEl == 'string') {
+                    div.innerHTML = this.leftEl;
+                } else if (this.leftEl && this.leftEl.tagName) {
+                    div.appendChild(this.leftEl);
+                }
+            } else {
+                div.className = 'next-steps-section-right';
+                if (typeof this.rightEl == 'string') {
+                    div.innerHTML = this.rightEl;
+                } else if (this.rightEl && this.rightEl.tagName) {
+                    div.appendChild(this.rightEl);
+                }
+            }
+            return div;
+        },
+        create: function() {
+            var section = createElement('section');
+            section.className = 'next-steps-section clearfix';
+            section.appendChild(this._createSection(true));
+            section.appendChild(this._createSection(false));
+            return section;
+        },
+        render: function () {
+            writeElement(this.create());
+        }
+    };
+
+    function Breadcrumb(items) {
+        this.items = items;
+    }
+    Breadcrumb.prototype = {
+        _getListItems: function () {
+            if (this.items && this.items.length > 0) {
+                var ul = createElement("ul");
+                for (var i = 0; i < this.items.length; i++) {
+                    var li = createElement("li");
+                    var a = createGeneralLink(this.items[i], true);
+                    li.appendChild(a);
+                    ul.appendChild(li);
+                }
+                return ul;
+            }
+            return null;
+        },
+        create: function () {
+            var div = createElement("div");
+            div.className = 'container banner__breadcrumb';
+            var list = this._getListItems();
+            if (list) {
+                div.appendChild(list);
+            }
+            return div;
+        }
+    };
+
+    function PageBannerTools() {
+        this.showLastUpdate = false;
+        this.lastUpdate = '';
+        this.showPrintFriendly = false;
+        this.printFriendly = '';
+        this.printFriendlyUrl = '#';
+        this.links = [];
+    }
+    PageBannerTools.prototype = {
+        _createLastUpdate: function() {
+            if (this.showLastUpdate) {
+                var div = createElement("div");
+                div.insertAdjacentHTML("beforeend", _eHTML(this.lastUpdate));
+                div.className = "last-updated";
+                return div;
+            }
+            return null;
+        },
+        _createLinks: function() {
+            var divs = [];
+            for (var i = 0; i < this.links.length; i++) {
+                var link = this.links[i];
+                var effect = getValue(link, "effect");
+                var title = getValue(link, "title");
+                if (effect == "redirect") {
+                    var div = createElement("div");
+                    div.className = 'tools-links-nav';
+                    var a = createGeneralLink(link, true);
+                    div.appendChild(a);
+                    divs.push(div);
+                } else if (effect == "popup") {
+                    var div = createElement("div");
+                    var a = createElement("a");
+                    var content = getValue(link, "content");
+                    a.href = "#";
+                    a.title = title;
+                    a.className = "fancy-note-label";
+                    a.setAttribute("data-toggle", "popup");
+                    a.insertAdjacentHTML("beforeend", _eHTML(title));
+                    div.className = 'tools-links-nav fancy-note';
+                    div.innerHTML = [
+                        a.outerHTML,
+                        '<div class="fancy-note-popup">',
+                        '<a class="fancy-note-close" href="#"></a>',
+                        '<div class="fancy-note-detail">',
+                        '<div class="fancy-note-title">' + _e(title) + '</div>',
+                        '<div class="fancy-note-desc">' + content + '</div>',
+                        '</div></div>',
+                        '<div class="fancy-note-shade"></div>'
+                    ].join('');
+                    divs.push(div);
+                }
+            }
+            return divs;
+        },
+        _createPrintFriendly: function() {
+            if (this.showPrintFriendly) {
+                var div = createElement("div");
+                div.className = 'print-friendly';
+                var a = createElement("a");
+                a.title = this.printFriendly;
+                a.href = this.printFriendlyUrl;
+                a.insertAdjacentHTML("beforeend", _eHTML(this.printFriendly));
+                div.appendChild(a);
+                return div;
+            }
+            return null;
+        },
+        setLastUpdate: function(show, text) {
+            this.showLastUpdate = (show == true);
+            this.lastUpdate = text;
+        },
+        setPrintFriendly: function(show, text) {
+            this.showPrintFriendly = (show == true);
+            this.printFriendly = text;
+        },
+        setPrintFriendlyLink: function(link) {
+            this.printFriendlyUrl = link;
+        },
+        setLinks: function(links) {
+            this.links = links;
+        },
+        create: function () {
+            var div = createElement("div");
+            div.className = "container tools";
+            var lastUpdate = this._createLastUpdate();
+            if (lastUpdate) {
+                div.appendChild(lastUpdate);
+            }
+            var links = this._createLinks();
+            if (links) {
+                if (links.length > 0) {
+                    for (var i = 0; i < links.length; i++) {
+                        div.appendChild(links[i]);
+                    }
+                }
+            }
+            var printFriendly = this._createPrintFriendly();
+            if (printFriendly) {
+                div.appendChild(printFriendly);
+            }
+            return div;
+        }
+    };
+    function FancyNote(effect, title, content) {
+        this.effect = effect;
+        this.title = title;
+        this.content = content;
+        this.noteId = '';
+    }
+    FancyNote.prototype = {
+        setTitle: function(title) {
+            this.title = title;
+        },
+        setContent: function (content) {
+            this.content = content;
+        },
+        setEffect: function (effect) {
+            this.effect = effect;
+        },
+        setId: function (id) {
+            this.noteId = id;
+        },
+        create: function () {
+            var wrapper = createElement("div");
+            switch (this.effect) {
+                case 'hover':
+                    var tooltipDiv = createElement("div");
+                    tooltipDiv.className = "fancy-note-" + this.effect;
+                    if (!isEmptyValue(this.noteId)) {
+                        tooltipDiv.id = this.noteId;
+                    }
+                    tooltipDiv.innerHTML = this.content;
+                    wrapper.appendChild(tooltipDiv);
+                    break;
+                default:
+                    var popupDiv = createElement("div");
+                    popupDiv.className = "fancy-note-" + this.effect;
+                    if (!isEmptyValue(this.noteId)) {
+                        popupDiv.id = this.noteId;
+                    }
+                    popupDiv.innerHTML = [
+                        '<a class="fancy-note-close" href="#"></a>',
+                        '<div class="fancy-note-detail">',
+                        '<div class="fancy-note-title">' + _e(this.title) + '</div>',
+                        '<div class="fancy-note-desc">' + this.content + '</div>',
+                        '</div>'
+                    ].join('');
+                    wrapper.appendChild(popupDiv);
+                    var shadeDiv = createElement("div");
+                    shadeDiv.className = 'fancy-note-shade';
+                    wrapper.appendChild(shadeDiv);
+                    break;
+            }
+            return wrapper;
+        }
+    };
+
+    function FancyNoteTooltip(effect, title, content) {
+        FancyNote.call(this, effect, title, content);
+    }
+    FancyNoteTooltip.prototype = Object.create(FancyNote.prototype);
+    FancyNoteTooltip.prototype.constructor = FancyNoteTooltip;
+    FancyNoteTooltip.prototype.create = function () {
+        var wrapper = FancyNote.prototype.create(this);
+        var a = createElement("a");
+        a.title = this.title;
+        a.href = "#";
+        a.className = "fancy-note-label tooltip-white";
+        a.setAttribute("data-toggle", "popup");
+
+        var div = createElement("div");
+        div.className = "fancy-note-tooltip";
+        div.innerHTML = [
+            a.outerHTML,
+            wrapper.innerHTML
+        ];
+        return div;
+    };
+
+    function TitleAndContent(title) {
+        SectionPanel.call(this, title);
+        this.subtitle = '';
+        this.showlastupate = false;
+        this.updated = '';
+        this.tipsTitle = '';
+        this.tipsEffect = '';
+        this.tipsContent = '';
+        this.skipCommonBodyStyle = false;
+    }
+    TitleAndContent.prototype = Object.create(SectionPanel.prototype);
+    TitleAndContent.prototype.constructor = TitleAndContent;
+    
+    TitleAndContent.prototype.setSkipCommonBodyStyle = function (skip) {
+        this.skipCommonBodyStyle = (skip == true);
+    };
+    TitleAndContent.prototype.setTooltip = function (effect, title, content) {
+        this.tipsContent = content;
+        this.tipsEffect = effect;
+        this.tipsTitle = title;
+    };
+    TitleAndContent.prototype._renderSectionHeader = function() {
+        var head = createElement("div");
+        head.className = this._getSectionHeaderClass();
+        var container = createElement("div");
+        var containerClasses = ['section-panel-head--container clearfix'];
+
+        // Icon
+        if (this.icon != '') {
+            containerClasses.push('has-head-icon');
+            var icon = createElement('div');
+            icon.className = 'section-panel-head--icon';
+            icon.style.backgroundImage = "url(" + this.icon + ")";
+            if (this.iconBackground) {
+                icon.style.backgroundColor = '#' + this.iconBackground;
+            }
+            head.appendChild(icon);
+        }
+        // Text
+        var headTitle = createElement("div");
+        headTitle.className = 'section-panel-head--title common-tc-title';
+        var textNode = _eHTML(this.title);
+        headTitle.insertAdjacentHTML("beforeend", textNode);
+
+        // Tooltip
+        if (this.tipsEffect == 'popup' || this.tipsEffect == 'hover') {
+            var tips = new FancyNoteTooltip(this.tipsTitle, this.tipsTitle, this.tipsContent);
+            headTitle.appendChild(tips.create());
+        }
+
+        // New Tag
+        if (this.withNewIcon) {
+            var tag = createElement('span');
+            tag.className = 'tag-img-new rhs-tag';
+            headTitle.appendChild(tag);
+        }
+        container.className = containerClasses.join(' ');
+        container.appendChild(headTitle);
+        head.appendChild(container);
+        return head;
+    };
+    
+    TitleAndContent.prototype._getSectionBodyClass = function () {
+        var cls = [SectionPanel.prototype._getSectionBodyClass.call(this)];
+        if (!this.skipCommonBodyStyle) {
+            cls.push('common-tc-content-container');
+        }
+        return cls.join(' ');
+    };
+
+    _c.Widget = _c.Widget || {};
+    _c.Widget.SectionPanel = SectionPanel;
+    _c.Widget.CollapseContainer = CollapseContainer;
+    _c.Widget.CollapsePanel = CollapsePanel;
+    _c.Widget.QuickLinks = QuickLinks;
+    _c.Widget.TwinCard = TwinCard;
+    _c.Widget.Breadcrumb = Breadcrumb;
+    _c.Widget.PageBannerTools = PageBannerTools;
+    _c.Widget.FancyNote = FancyNote;
+    _c.Widget.TitleAndContent = TitleAndContent;
+    _c.Widget.FancyNoteTooltip = FancyNoteTooltip;
+})(window.hkexCMS);
